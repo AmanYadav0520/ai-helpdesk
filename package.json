@@ -1,0 +1,11 @@
+{
+  "name": "ticket-management-system",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "bun --filter '*' dev"
+  }
+}
