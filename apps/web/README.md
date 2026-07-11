@@ -1,4 +1,4 @@
-# bun-react-tailwind-template
+# web
 
 To install dependencies:
 
@@ -12,10 +12,16 @@ To start a development server:
 bun dev
 ```
 
-To run for production:
+To build for production:
+
+```bash
+bun run build
+```
+
+To preview a production build:
 
 ```bash
 bun start
 ```
 
-This project was created using `bun init` in bun v1.3.14. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+React + TypeScript, bundled and served by [Vite](https://vitejs.dev). Tailwind CSS is wired in via `@tailwindcss/vite`.

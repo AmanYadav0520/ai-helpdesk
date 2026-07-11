@@ -9,9 +9,9 @@
 
 ## Frontend — `apps/web`
 - React + TypeScript
-- Bundled and served by Bun's built-in bundler/dev server (no Vite/webpack) — `bun --hot src/index.ts`, HMR enabled
-- Tailwind CSS via `bun-plugin-tailwind`
-- Client-side env vars must be prefixed `BUN_PUBLIC_*` (configured in `apps/web/bunfig.toml`) to be inlined into the bundle — e.g. `BUN_PUBLIC_API_URL` for the API origin
+- **Revised**: originally bundled/served by Bun's built-in bundler/dev server; switched to Vite (`vite.config.ts`) to match the course setup — `vite`/`vite build`/`vite preview`, HMR via Vite's own client
+- Tailwind CSS via `@tailwindcss/vite`
+- Client-side env vars must be prefixed `VITE_*` to be exposed, read via `import.meta.env.VITE_*` — e.g. `VITE_API_URL` for the API origin
 
 ## Backend — `apps/server`
 - Express (v5) + TypeScript, run directly by Bun (`bun --hot src/index.ts`) — no separate build/compile step
