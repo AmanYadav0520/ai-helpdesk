@@ -9,9 +9,11 @@
     "build": "bun run build.ts"
   },
   "dependencies": {
+    "better-auth": "^1.6.23",
     "bun-plugin-tailwind": "^0.1.2",
     "react": "^19",
     "react-dom": "^19",
+    "react-router-dom": "^7",
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {

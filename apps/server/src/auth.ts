@@ -2,9 +2,14 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
 
+const webOrigin = process.env.WEB_ORIGIN;
+if (!webOrigin) {
+  throw new Error("WEB_ORIGIN environment variable is required");
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
-  trustedOrigins: [process.env.WEB_ORIGIN ?? "http://localhost:3000"],
+  trustedOrigins: [webOrigin],
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
