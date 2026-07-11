@@ -13,8 +13,8 @@ Assumptions made where PROJECT.md still has open questions (flagged inline with 
 
 ## Phase 1 — Auth & User Management
 
-- [ ] Configure Auth.js with Prisma adapter, **database session strategy**
-- [ ] Add `role` field to `User` (admin / agent)
+- [x] Configure Better Auth with Prisma adapter, **database session strategy** (email/password, public sign-up disabled)
+- [x] Add `role` field to `User` (admin / agent)
 - [ ] Seed script: create the initial admin account on first deploy
 - [ ] Login page + protected route middleware
 - [ ] Admin UI: list agents

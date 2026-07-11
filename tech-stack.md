@@ -24,10 +24,11 @@
 - **Not yet wired up in the scaffold** — server currently has no DB connection
 
 ## Authentication
-- Auth.js (NextAuth) — **not yet wired up**; needs re-evaluation since Auth.js is designed around Next.js. With a standalone Express API, either front the API with Next.js just for auth, or use a framework-agnostic session approach (e.g. `express-session` + a Postgres session store) to keep the database-session requirement
-- **Session strategy: database sessions** (not JWT) — still the requirement regardless of library
+- **Revised**: Auth.js was originally scoped but assumes Next.js/a handful of supported frameworks, which doesn't fit the standalone Express API. Switched to [Better Auth](https://better-auth.com) — framework-agnostic, integrates directly with Express (`better-auth/node`'s `toNodeHandler`) and the existing Prisma client via `better-auth/adapters/prisma`
+- Email/password auth only for now (`emailAndPassword.enabled: true`), with `disableSignUp: true` — PROJECT.md specifies a single admin account that creates agents, not open self-registration; the bootstrap admin / agent-invite flow is Phase 1 user-management work
+- **Session strategy: database sessions** (not JWT) — Better Auth stores sessions in the `Session` table by default (no `secondaryStorage` configured), which satisfies this without extra config
   - Enables server-side session revocation (e.g. admin disables an agent and their active sessions die immediately) and avoids stale-claims issues from long-lived JWTs
-  - Role (admin/agent) read from the `User` record on each request, not embedded in a token
+  - Role (admin/agent) is a `role` additional field on the Better Auth `User` model (default `"agent"`, not user-settable via `input: false`), read from the `User` record on each request, not embedded in a token
 
 ## AI
 - Anthropic API (Claude)
@@ -44,5 +45,4 @@
 ## Open Questions
 - Confirm inbound email provider (Postmark vs SendGrid) based on pricing/existing accounts
 - Confirm whether KB articles are a separate authored table or generated/derived (see PROJECT.md Open Questions)
-- **Auth library**: Auth.js assumes Next.js/a handful of supported frameworks. With Express as the API, decide between `express-session` + `connect-pg-simple` (or similar Postgres store) vs. another approach — needs a decision before Phase 1 of the implementation plan
 - Production build/deploy story for `apps/server` and `apps/web` as two separate deployables (was one deployable under the Next.js plan) — affects hosting choice below
