@@ -29,3 +29,12 @@ There is no lint, typecheck, or test command configured yet in either workspace'
 
 Use the context7 MCP tools (`resolve-library-id` / `query-docs`) to pull current docs for the libraries in this stack (Bun, Express, React, Tailwind, and later Prisma/Auth.js) rather than relying on training data — several of these APIs (Bun's bundler/serve, Express 5) change fast enough that memorized answers are likely stale.
  
+ # Project Instructions
+
+This project follows Code with Mosh's architecture and coding style.
+
+Rules:
+- Follow Code with Mosh's folder structure.
+- Do not refactor existing architecture unless I explicitly ask.
+- Prefer consistency with the course over introducing new patterns.
+- Suggest improvements only after explaining why they differ from the course.
