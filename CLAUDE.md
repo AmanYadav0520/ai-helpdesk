@@ -45,20 +45,16 @@ Bun workspace monorepo with two independently deployable apps — not a single N
 Better Auth (`apps/server/src/auth.ts`), backed by Postgres via `prismaAdapter`. See `tech-stack.md` for rationale (why Better Auth, why database sessions).
 
 - **Mounting**: `app.all("/api/auth/*splat", toNodeHandler(auth))` runs *before* `express.json()`, since Better Auth parses its own request body. Don't add body-parsing middleware ahead of it.
+
 - **Sign-up**: email/password only, `disableSignUp: true` — no self-registration. The only account-creation path is `bun run seed` (`apps/server/prisma/seed.ts`), which creates one admin from `ADMIN_EMAIL`/`ADMIN_PASSWORD`/`ADMIN_NAME` (skips if that email exists). Admin-driven agent invites aren't built yet.
+
 - **Role**: `admin` | `agent` (default `agent`), defined via Better Auth's `additionalFields` (`input: false`, so clients can't set it) and mirrored as a Prisma `Role` enum. Trust `req.user.role` server-side only — never the client.
+
 - **Protecting routes**: use the `requireAuth` middleware (`apps/server/src/require-auth.ts`) — 401s without a session, otherwise attaches `req.user`/`req.session`. Applied per-route; nothing is protected by default.
+
 - **Client**: `apps/web/src/lib/auth-client.ts` wraps `better-auth/react` (`authClient`, `useSession`, `signIn`, `signOut`). `ProtectedRoute.tsx` redirects to `/login` when there's no session.
+
 - **Env vars**: server needs `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `WEB_ORIGIN`; web needs `VITE_API_URL`. See `apps/server/.env.example`.
-
-## E2E Testing
-
-Playwright, configured at the repo root (`playwright.config.ts`). Setup and config only — no test files exist yet.
-
-- **Isolated test database**: a separate `helpdesk_test` database, configured via `apps/server/.env.test`; the dev database is never touched.
-- **Setup/teardown**: `e2e/global-setup.ts` resets and re-seeds the test database (`prisma migrate reset --force` + seed) before the run; `e2e/global-teardown.ts` leaves it intact afterward for debugging.
-- **Ports**: test server and web run on 3002 / 5174, separate from the normal dev ports (3001 / 3000), so a running dev environment isn't disturbed.
-- **Commands**: `bun run test:e2e` (also `test:e2e:ui`, `test:e2e:headed`) from the repo root.
 
 ## Documentation Lookups
 
