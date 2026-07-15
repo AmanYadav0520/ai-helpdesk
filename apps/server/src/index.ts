@@ -3,8 +3,7 @@ import express from "express";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth";
 import { prisma } from "./db";
-import { requireAdmin } from "./require-admin";
-import { requireAuth } from "./require-auth";
+import usersRouter from "./routes/users";
 
 const app = express();
 const port = process.env.PORT ?? 3001;
@@ -34,13 +33,7 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
-app.get("/api/users", requireAuth, requireAdmin, async (_req, res) => {
-  const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
-    orderBy: { createdAt: "asc" },
-  });
-  res.json({ users });
-});
+app.use("/api/users", usersRouter);
 
 app.listen(port, () => {
   console.log(`🚀 API server running at http://localhost:${port}`);

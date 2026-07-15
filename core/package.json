@@ -1,0 +1,11 @@
+{
+  "name": "core",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./schemas/*": "./schemas/*.ts"
+  },
+  "peerDependencies": {
+    "zod": "^4"
+  }
+}
