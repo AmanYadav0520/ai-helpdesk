@@ -38,9 +38,14 @@ Bun workspace monorepo with two independently deployable apps — not a single N
 
 - **`apps/server`** — Express v5 run directly by Bun, port 3001. CORS restricted to `WEB_ORIGIN` (default `http://localhost:3000`).
 - **`apps/web`** — React 19 + Vite, port 3000. Tailwind via `@tailwindcss/vite`.
-- The apps talk over plain cross-origin HTTP (`fetch`) — no shared routes, no proxy.
+- The apps talk over plain cross-origin HTTP — no shared routes, no proxy.
 - Client env vars need a `VITE_*` prefix (e.g. `VITE_API_URL`) to be exposed via `import.meta.env`.
 - Sessions are database-backed, not JWT, so an admin can instantly revoke an agent's active sessions.
+
+## Data Fetching
+
+- Use axios through `apps/web/src/lib/api.ts`; don't create per-component axios instances.
+- Use TanStack Query (`useQuery`/`useMutation`) for server state instead of `useEffect` + manual fetching.
 
 ## Authentication
 
