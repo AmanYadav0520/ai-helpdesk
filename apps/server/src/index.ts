@@ -3,6 +3,8 @@ import express from "express";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth";
 import { prisma } from "./db";
+import { requireAdmin } from "./require-admin";
+import { requireAuth } from "./require-auth";
 
 const app = express();
 const port = process.env.PORT ?? 3001;
@@ -30,6 +32,14 @@ app.get("/api/health", async (_req, res) => {
   } catch (err) {
     res.status(503).json({ status: "error", db: "disconnected" });
   }
+});
+
+app.get("/api/users", requireAuth, requireAdmin, async (_req, res) => {
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+  res.json({ users });
 });
 
 app.listen(port, () => {
