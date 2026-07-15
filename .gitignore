@@ -36,3 +36,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Playwright e2e output
 e2e/test-results/
 e2e/playwright-report/
+
+# VS Code workspace settings (may contain local DB credentials)
+.vscode/settings.json
