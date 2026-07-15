@@ -3,12 +3,12 @@ import path from "path";
 import dotenv from "dotenv";
 
 export default function globalSetup() {
-  const envPath = path.resolve(__dirname, "../apps/server/.env.test");
+  const envPath = path.resolve(import.meta.dirname, "../apps/server/.env.test");
   const env = dotenv.config({ path: envPath });
 
   console.log("Resetting test database...");
 
-  const serverDir = path.resolve(__dirname, "../apps/server");
+  const serverDir = path.resolve(import.meta.dirname, "../apps/server");
   const execEnv = {
     ...process.env,
     ...env.parsed,

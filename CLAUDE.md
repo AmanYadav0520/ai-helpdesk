@@ -10,6 +10,7 @@ This project follows Code with Mosh's architecture and coding style.
 - Don't refactor existing architecture unless explicitly asked.
 - Prefer consistency with the course over new patterns.
 - Explain how a suggestion differs from the course before proposing it.
+- Use the `e2e-test-writer` subagent to write or update Playwright E2E tests.
 
 ## Project Status
 
@@ -27,8 +28,9 @@ Check those three files for requirements — don't assume behavior from the code
 - Dev, single app: `bun run dev` in `apps/web` or `apps/server`
 - Build web app: `bun run build` in `apps/web`
 - Production start: `bun run start` in `apps/web` or `apps/server`
+- E2E tests: `bun run test:e2e` (also `test:e2e:ui`, `test:e2e:headed`) — see `e2e-test-writer` agent for details
 
-No lint, typecheck, or test command exists yet — don't assume one does.
+No lint or typecheck command exists yet — don't assume one does.
 
 ## Architecture
 
