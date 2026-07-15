@@ -23,6 +23,43 @@ describe("CreateUserDialog", () => {
     vi.mocked(api.post).mockReset();
   });
 
+  it("opens the dialog when the New User button is clicked", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "New User" }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("closes the dialog when clicking outside of it", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await openDialog(user);
+
+    const overlay = document.querySelector('[data-slot="dialog-overlay"]');
+    if (!overlay) throw new Error("dialog overlay not found");
+    await user.click(overlay);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes the dialog when the Escape key is pressed", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    await openDialog(user);
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
   it("shows validation errors for a short name and password", async () => {
     const user = userEvent.setup();
     renderDialog();
