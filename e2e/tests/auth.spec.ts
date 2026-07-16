@@ -340,7 +340,7 @@ test.describe("Authentication", () => {
     test("should re-enable the form after a network-level failure (though it does not yet surface an error message)", async ({
       page,
     }) => {
-      // KNOWN GAP: Login.tsx's onSubmit calls `authClient.signIn.email(...)`
+      // KNOWN GAP: LoginPage.tsx's onSubmit calls `authClient.signIn.email(...)`
       // without a try/catch. An HTTP error response (e.g. 500, tested
       // above) resolves normally to `{ error }`, which the app handles —
       // but a raw network-level failure (DNS/connection/abort, no response

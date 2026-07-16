@@ -10,6 +10,11 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
 
+  if (session.user.deletedAt) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   req.user = session.user;
   req.session = session.session;
   next();

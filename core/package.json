@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./schemas/*": "./schemas/*.ts"
+    "./schemas/*": "./schemas/*.ts",
+    "./constants/*": "./constants/*.ts"
   },
   "peerDependencies": {
     "zod": "^4"

@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { Role } from "core/constants/role";
 import { prisma } from "./db";
 
 const webOrigin = process.env.WEB_ORIGIN;
@@ -19,7 +20,12 @@ export const auth = betterAuth({
       role: {
         type: ["admin", "agent"],
         required: false,
-        defaultValue: "agent",
+        defaultValue: Role.agent,
+        input: false,
+      },
+      deletedAt: {
+        type: "date",
+        required: false,
         input: false,
       },
     },

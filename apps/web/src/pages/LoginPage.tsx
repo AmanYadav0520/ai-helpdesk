@@ -23,7 +23,7 @@ const schema = z.object({
 
 type LoginFormData = z.infer<typeof schema>;
 
-export function Login() {
+export function LoginPage() {
   const { data: session, isPending } = useSession();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);

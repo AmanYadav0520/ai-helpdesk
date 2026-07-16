@@ -2,7 +2,12 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import { createUserSchema, type CreateUserInput } from "core/schemas/users";
+import {
+  createUserSchema,
+  updateUserSchema,
+  type CreateUserInput,
+  type UpdateUserInput,
+} from "core/schemas/users";
 import { Controller, useForm } from "react-hook-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -11,11 +16,19 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { api } from "../lib/api";
 
-type CreateUserFormProps = {
+type EditingUser = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+type UserFormProps = {
+  user?: EditingUser;
   onSuccess: () => void;
 };
 
-export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
+export function UserForm({ user, onSuccess }: UserFormProps) {
+  const isEdit = !!user;
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -23,24 +36,25 @@ export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
     control,
     handleSubmit,
     formState: { isSubmitting },
-  } = useForm<CreateUserInput>({
-    resolver: zodResolver(createUserSchema),
-    defaultValues: { name: "", email: "", password: "" },
+  } = useForm<CreateUserInput | UpdateUserInput>({
+    resolver: zodResolver(isEdit ? updateUserSchema : createUserSchema),
+    defaultValues: { name: user?.name ?? "", email: user?.email ?? "", password: "" },
   });
 
   const { mutateAsync } = useMutation({
-    mutationFn: (data: CreateUserInput) => api.post("/api/users", data),
+    mutationFn: (data: CreateUserInput | UpdateUserInput) =>
+      isEdit ? api.put(`/api/users/${user.id}`, data) : api.post("/api/users", data),
   });
 
-  const onSubmit = async (data: CreateUserInput) => {
+  const onSubmit = async (data: CreateUserInput | UpdateUserInput) => {
     setError(null);
 
     try {
       await mutateAsync(data);
     } catch (err) {
       const message = isAxiosError<{ error?: string }>(err)
-        ? (err.response?.data.error ?? "Failed to create user.")
-        : "Failed to create user.";
+        ? (err.response?.data.error ?? `Failed to ${isEdit ? "save" : "create"} user.`)
+        : `Failed to ${isEdit ? "save" : "create"} user.`;
       setError(message);
       return;
     }
@@ -98,6 +112,7 @@ export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
                 id={field.name}
                 type="password"
                 autoComplete="off"
+                placeholder={isEdit ? "Leave blank to keep current" : undefined}
                 aria-invalid={fieldState.invalid}
               />
               <FieldError errors={[fieldState.error]} />
@@ -114,7 +129,13 @@ export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
 
       <DialogFooter>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : "Create"}
+          {isEdit
+            ? isSubmitting
+              ? "Saving..."
+              : "Save Changes"
+            : isSubmitting
+              ? "Creating..."
+              : "Create"}
         </Button>
       </DialogFooter>
     </form>

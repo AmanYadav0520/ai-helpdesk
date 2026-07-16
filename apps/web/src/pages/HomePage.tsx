@@ -1,6 +1,6 @@
 import { useSession } from "../lib/auth-client";
 
-export function Home() {
+export function HomePage() {
   const { data: session } = useSession();
 
   return (

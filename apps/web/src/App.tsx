@@ -4,20 +4,20 @@ import "./index.css";
 import { AdminRoute } from "./components/AdminRoute";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { Home } from "./pages/Home";
-import { Login } from "./pages/Login";
-import { Users } from "./pages/Users";
+import { HomePage } from "./pages/HomePage";
+import { LoginPage } from "./pages/LoginPage";
+import { UsersPage } from "./pages/UsersPage";
 
 export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<HomePage />} />
             <Route element={<AdminRoute />}>
-              <Route path="/users" element={<Users />} />
+              <Route path="/users" element={<UsersPage />} />
             </Route>
           </Route>
         </Route>
