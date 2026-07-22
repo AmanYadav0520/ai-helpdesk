@@ -20,6 +20,9 @@ export function NavBar() {
         Help Desk
       </Link>
       <div className="flex items-center gap-4">
+        <Link to="/tickets" className="font-mono text-sm text-[#fbf0df] hover:underline">
+          Tickets
+        </Link>
         {session?.user.role === Role.admin && (
           <Link to="/users" className="font-mono text-sm text-[#fbf0df] hover:underline">
             Users

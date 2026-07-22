@@ -4,6 +4,10 @@ import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth";
 import { prisma } from "./db";
 import usersRouter from "./routes/users";
+import ticketsRouter from "./routes/tickets";
+import agentsRouter from "./routes/agents";
+import repliesRouter from "./routes/replies";
+import webhooksRouter from "./routes/webhooks";
 
 const app = express();
 const port = process.env.PORT ?? 3001;
@@ -34,6 +38,10 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.use("/api/users", usersRouter);
+app.use("/api/tickets", ticketsRouter);
+app.use("/api/agents", agentsRouter);
+app.use("/api/replies", repliesRouter);
+app.use("/api/webhooks", webhooksRouter);
 
 app.listen(port, () => {
   console.log(`🚀 API server running at http://localhost:${port}`);

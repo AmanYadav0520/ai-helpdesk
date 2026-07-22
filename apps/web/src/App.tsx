@@ -7,6 +7,8 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { UsersPage } from "./pages/UsersPage";
+import { TicketsPage } from "./pages/TicketsPage";
+import { TicketDetailPage } from "./pages/TicketDetailPage";
 
 export function App() {
   return (
@@ -16,6 +18,8 @@ export function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/tickets" element={<TicketsPage />} />
+            <Route path="/tickets/:id" element={<TicketDetailPage />} />
             <Route element={<AdminRoute />}>
               <Route path="/users" element={<UsersPage />} />
             </Route>
