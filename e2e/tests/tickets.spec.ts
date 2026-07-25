@@ -2,11 +2,13 @@ import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "../fixtures/auth";
 import {
   postInboundEmail,
+  postInboundEmailWithHeader,
   uniqueSubject,
   uniqueSenderEmail,
   createTicketDirectly,
   createAgentDirectly,
 } from "../fixtures/tickets";
+import { testDb } from "../fixtures/db";
 
 test.describe("Ticket Management", () => {
   test.beforeEach(async ({ page }) => {
@@ -151,5 +153,51 @@ test.describe("Ticket Management", () => {
     await expect(page.getByText("No replies yet.")).toHaveCount(0);
     // The form clears after a successful submit.
     await expect(replyTextbox).toHaveValue("");
+  });
+});
+
+// Pure API-level tests against requireWebhookSecret and inboundEmailSchema's
+// failure paths — no browser/session needed, so this is a sibling describe
+// rather than nested under "Ticket Management" (whose beforeEach logs an
+// admin in via `page`, which none of these tests use).
+test.describe("Inbound Email Webhook Failure Paths", () => {
+  test("returns 401 with a missing x-webhook-secret header", async ({ request }) => {
+    const res = await postInboundEmailWithHeader(request, undefined, {
+      from: `Jane Doe <${uniqueSenderEmail()}>`,
+      subject: uniqueSubject(),
+      text: "I need help with my account.",
+    });
+
+    expect(res.status()).toBe(401);
+    expect(await res.json()).toEqual({ error: "Invalid webhook secret" });
+  });
+
+  test("returns 401 with an incorrect x-webhook-secret header", async ({ request }) => {
+    const res = await postInboundEmailWithHeader(request, "not-the-real-secret", {
+      from: `Jane Doe <${uniqueSenderEmail()}>`,
+      subject: uniqueSubject(),
+      text: "I need help with my account.",
+    });
+
+    expect(res.status()).toBe(401);
+    expect(await res.json()).toEqual({ error: "Invalid webhook secret" });
+  });
+
+  test("returns 400 and creates no ticket when the subject is empty", async ({ request }) => {
+    const senderEmail = uniqueSenderEmail();
+
+    const res = await postInboundEmail(request, {
+      from: `Jane Doe <${senderEmail}>`,
+      subject: "",
+      text: "I need help with my account.",
+    });
+
+    expect(res.status()).toBe(400);
+    expect(await res.json()).toEqual({ error: "Subject is required" });
+
+    // Confirm validation failure short-circuits before any DB write, not
+    // just that the response looks right.
+    const tickets = await testDb.ticket.findMany({ where: { senderEmail } });
+    expect(tickets).toHaveLength(0);
   });
 });

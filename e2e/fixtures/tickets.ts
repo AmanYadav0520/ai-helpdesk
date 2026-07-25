@@ -1,15 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { APIRequestContext } from "@playwright/test";
 import { Role } from "../../core/constants/role";
-import { testDb } from "./db";
-
-/**
- * apps/server runs on 3002 in the test environment (see playwright.config.ts's
- * webServer entries) and isn't reachable through apps/web's baseURL — there's
- * no dev-server proxy in this stack (plain cross-origin fetch, see CLAUDE.md).
- * Mirrors the same constant already used in e2e/tests/auth.spec.ts.
- */
-export const API_URL = "http://localhost:3002";
+import { API_URL, testDb } from "./db";
 
 // e2e/fixtures/db.ts loads apps/server/.env.test via dotenv as an import
 // side effect, so WEBHOOK_SECRET is on process.env by the time this file's
@@ -50,6 +42,31 @@ export async function postInboundEmail(
 ) {
   return request.post(`${API_URL}/api/webhooks/inbound-email`, {
     headers: { "x-webhook-secret": WEBHOOK_SECRET! },
+    multipart: {
+      from: fields.from,
+      to: fields.to ?? "support@example.com",
+      subject: fields.subject,
+      text: fields.text,
+    },
+  });
+}
+
+/**
+ * Like postInboundEmail, but lets the caller control (or omit entirely) the
+ * x-webhook-secret header — for tests exercising requireWebhookSecret's
+ * failure paths (missing/incorrect secret) rather than the happy path,
+ * which always goes through postInboundEmail above.
+ */
+export async function postInboundEmailWithHeader(
+  request: APIRequestContext,
+  secretHeaderValue: string | undefined,
+  fields: { from: string; to?: string; subject: string; text: string }
+) {
+  const headers: Record<string, string> =
+    secretHeaderValue === undefined ? {} : { "x-webhook-secret": secretHeaderValue };
+
+  return request.post(`${API_URL}/api/webhooks/inbound-email`, {
+    headers,
     multipart: {
       from: fields.from,
       to: fields.to ?? "support@example.com",

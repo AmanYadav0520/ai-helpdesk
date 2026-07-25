@@ -7,9 +7,7 @@ import {
   expectLoginPage,
   expectHomePage,
 } from "../fixtures/auth";
-import { expireSessionByToken, extractSessionToken, testDb } from "../fixtures/db";
-
-const API_URL = "http://localhost:3002";
+import { API_URL, expireSessionByToken, extractSessionToken, testDb } from "../fixtures/db";
 
 test.describe("Authentication", () => {
   test.describe("Login Page", () => {

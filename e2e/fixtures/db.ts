@@ -12,8 +12,23 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+if (!process.env.BETTER_AUTH_URL) {
+  throw new Error(
+    "BETTER_AUTH_URL is not set — expected it to come from apps/server/.env.test"
+  );
+}
+
 /** Direct DB access to the test database, for scenarios not reachable via the app's HTTP API. */
 export const testDb = createTestDbClient(process.env.DATABASE_URL);
+
+/**
+ * apps/server's own base URL (e.g. http://localhost:3002 in the test env),
+ * reused from BETTER_AUTH_URL rather than a separate env var — it's already
+ * the server's origin, Better-Auth-specific naming aside. Needed because
+ * apps/server isn't reachable through apps/web's baseURL — there's no
+ * dev-server proxy in this stack (plain cross-origin fetch, see CLAUDE.md).
+ */
+export const API_URL = process.env.BETTER_AUTH_URL;
 
 /**
  * better-auth signs the session cookie as `<token>.<signature>`; the
