@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import Parse from "@sendgrid/inbound-mail-parser";
 import { inboundEmailSchema } from "core/schemas/tickets";
+import { TicketStatus } from "core/constants/ticket-status";
 import { requireWebhookSecret } from "../require-webhook-secret";
 import { validate } from "../lib/validate";
 import { parseFromField, stripSubjectPrefixes } from "../lib/parse-inbound-email";
@@ -37,7 +38,7 @@ router.post("/inbound-email", requireWebhookSecret, upload.any(), async (req, re
   const existingTicket = await prisma.ticket.findFirst({
     where: {
       senderEmail: data.from,
-      status: { notIn: ["resolved", "closed"] },
+      status: { notIn: [TicketStatus.resolved, TicketStatus.closed] },
       subject: { equals: normalizedSubject, mode: "insensitive" },
     },
   });

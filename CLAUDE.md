@@ -10,6 +10,7 @@ This project follows Code with Mosh's architecture and coding style.
 - Don't refactor existing architecture unless explicitly asked.
 - Prefer consistency with the course over new patterns.
 - Explain how a suggestion differs from the course before proposing it.
+- **Testing strategy**: default to a [component test](#component-tests) for a component/page's own logic (rendering, form validation, mutation payloads, loading/error states) — reach for a Playwright E2E test only for what a component test can't reach: real cross-request/backend behavior (e.g. the inbound-email webhook's DB threading logic), auth/session flows, or a multi-page journey. When both could plausibly cover something, prefer the component test. See `e2e/tests/tickets.spec.ts` + `apps/web/src/pages/TicketsTable.test.tsx`/`apps/web/src/components/{TicketDetail,UpdateTicket,ReplyThread,ReplyForm}.test.tsx` for the precedent: list/detail rendering, status/category/assignee updates, and reply submission moved to component tests, leaving only the webhook's ticket-creation/threading behavior and its auth/validation failure paths in e2e.
 - Use the `e2e-test-writer` subagent to write or update Playwright E2E tests.
 
 ## Project Status
@@ -70,6 +71,7 @@ Use zod for data validation, both client and server side — don't hand-roll val
 
 Vitest + React Testing Library, scoped to `apps/web` — this is not part of the course (the reference repo has no component-testing setup at all), added on top of it.
 
+- **This is now the default choice for frontend test coverage — see the Testing strategy bullet under [Project Instructions](#project-instructions).** Reach for E2E only when a component test genuinely can't reach the behavior (real backend integration, auth/session, multi-page flows).
 - Config lives in `apps/web/vite.config.ts` (`test` block: jsdom environment, globals, setup file), setup file at `apps/web/src/test/setup.ts` (jest-dom matchers).
 - Colocate tests next to the component: `Component.tsx` → `Component.test.tsx`.
 - Wrap components that use TanStack Query with `renderWithQuery` from `apps/web/src/test/render-with-query.tsx` instead of reaching for `QueryClientProvider` directly in each test.

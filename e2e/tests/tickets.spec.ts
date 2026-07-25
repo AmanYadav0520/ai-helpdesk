@@ -1,24 +1,16 @@
 import { test, expect } from "@playwright/test";
-import { loginAsAdmin } from "../fixtures/auth";
-import {
-  postInboundEmail,
-  postInboundEmailWithHeader,
-  uniqueSubject,
-  uniqueSenderEmail,
-  createTicketDirectly,
-  createAgentDirectly,
-} from "../fixtures/tickets";
+import { postInboundEmail, postInboundEmailWithHeader, uniqueSubject, uniqueSenderEmail } from "../fixtures/tickets";
 import { testDb } from "../fixtures/db";
 
-test.describe("Ticket Management", () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsAdmin(page);
-  });
-
-  test("an inbound email creates a ticket and it appears in the tickets list", async ({
-    page,
-    request,
-  }) => {
+// UI-level coverage for the tickets list/detail pages (rendering, filtering,
+// status/category/assignee updates, reply submission) now lives in
+// component tests colocated with each component (apps/web/src/pages and
+// apps/web/src/components — TicketsTable.test.tsx, TicketDetail.test.tsx,
+// UpdateTicket.test.tsx, ReplyThread.test.tsx, ReplyForm.test.tsx). What's
+// left here is what those tests can't reach: the actual webhook -> DB
+// creation/threading behavior and its auth/validation failure paths.
+test.describe("Inbound Email Webhook", () => {
+  test("creates a ticket from an inbound email", async ({ request }) => {
     const subject = uniqueSubject();
     const senderEmail = uniqueSenderEmail();
 
@@ -36,18 +28,6 @@ test.describe("Ticket Management", () => {
     expect(ticket.status).toBe("open");
     expect(ticket.category).toBeNull();
     expect(ticket.assignedToId).toBeNull();
-
-    await page.goto("/tickets");
-    await expect(page.getByRole("heading", { name: "Tickets" })).toBeVisible();
-
-    // Search narrows the (potentially multi-page, parallel-populated) list
-    // down to just this test's own row.
-    await page.getByPlaceholder("Search tickets...").fill(subject);
-
-    const row = page.getByRole("row", { name: subject });
-    await expect(row).toBeVisible();
-    await expect(row.getByText("Jane Doe", { exact: true })).toBeVisible();
-    await expect(row.getByText(senderEmail, { exact: true })).toBeVisible();
   });
 
   test("a threaded follow-up email does not create a second ticket", async ({ request }) => {
@@ -75,91 +55,10 @@ test.describe("Ticket Management", () => {
     const { ticket: secondTicket } = await second.json();
     expect(secondTicket.id).toBe(firstTicket.id);
   });
-
-  test("opening a ticket from the list shows its detail", async ({ page }) => {
-    const ticket = await createTicketDirectly({
-      subject: uniqueSubject(),
-      body: "Please help me reset my password.",
-      senderName: "Alice Example",
-    });
-
-    await page.goto("/tickets");
-    await page.getByPlaceholder("Search tickets...").fill(ticket.subject);
-    await page.getByRole("link", { name: ticket.subject }).click();
-
-    await expect(page).toHaveURL(`/tickets/${ticket.id}`);
-    await expect(page.getByRole("heading", { name: ticket.subject })).toBeVisible();
-    await expect(
-      page.getByText(`${ticket.senderName} <${ticket.senderEmail}>`)
-    ).toBeVisible();
-    await expect(page.getByText(ticket.body)).toBeVisible();
-  });
-
-  test("updating status, category, and assignee via the detail page persists after reload", async ({
-    page,
-  }) => {
-    const ticket = await createTicketDirectly();
-    const agent = await createAgentDirectly();
-
-    await page.goto(`/tickets/${ticket.id}`);
-    await expect(page.getByRole("heading", { name: ticket.subject })).toBeVisible();
-
-    const statusSelect = page.getByRole("combobox", { name: "Status" });
-    const categorySelect = page.getByRole("combobox", { name: "Category" });
-    const assigneeSelect = page.getByRole("combobox", { name: "Assigned To" });
-
-    // Sanity-check the defaults from a freshly created ticket before changing them.
-    await expect(statusSelect).toHaveText("Open");
-    await expect(categorySelect).toHaveText("None");
-    await expect(assigneeSelect).toHaveText("Unassigned");
-
-    await statusSelect.click();
-    await page.getByRole("option", { name: "Resolved" }).click();
-    await expect(statusSelect).toHaveText("Resolved");
-
-    await categorySelect.click();
-    await page.getByRole("option", { name: "Technical" }).click();
-    await expect(categorySelect).toHaveText("Technical");
-
-    await assigneeSelect.click();
-    await page.getByRole("option", { name: agent.name }).click();
-    await expect(assigneeSelect).toHaveText(agent.name);
-
-    await page.reload();
-
-    await expect(page.getByRole("combobox", { name: "Status" })).toHaveText("Resolved");
-    await expect(page.getByRole("combobox", { name: "Category" })).toHaveText("Technical");
-    await expect(page.getByRole("combobox", { name: "Assigned To" })).toHaveText(agent.name);
-
-    // The list's Status badge should reflect the update too.
-    await page.goto("/tickets");
-    await page.getByPlaceholder("Search tickets...").fill(ticket.subject);
-    await expect(page.getByRole("row", { name: ticket.subject })).toContainText("Resolved");
-  });
-
-  test("adding an agent reply shows it in the reply thread", async ({ page }) => {
-    const ticket = await createTicketDirectly();
-
-    await page.goto(`/tickets/${ticket.id}`);
-    await expect(page.getByRole("heading", { name: "Replies" })).toBeVisible();
-    await expect(page.getByText("No replies yet.")).toBeVisible();
-
-    const replyBody = `This is a test agent reply ${Date.now()}`;
-    const replyTextbox = page.getByRole("textbox");
-    await replyTextbox.fill(replyBody);
-    await page.getByRole("button", { name: "Send Reply" }).click();
-
-    await expect(page.getByText(replyBody)).toBeVisible();
-    await expect(page.getByText("No replies yet.")).toHaveCount(0);
-    // The form clears after a successful submit.
-    await expect(replyTextbox).toHaveValue("");
-  });
 });
 
 // Pure API-level tests against requireWebhookSecret and inboundEmailSchema's
-// failure paths — no browser/session needed, so this is a sibling describe
-// rather than nested under "Ticket Management" (whose beforeEach logs an
-// admin in via `page`, which none of these tests use).
+// failure paths.
 test.describe("Inbound Email Webhook Failure Paths", () => {
   test("returns 401 with a missing x-webhook-secret header", async ({ request }) => {
     const res = await postInboundEmailWithHeader(request, undefined, {
