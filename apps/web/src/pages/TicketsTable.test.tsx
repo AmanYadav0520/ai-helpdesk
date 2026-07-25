@@ -1,4 +1,5 @@
-import { screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { TicketStatus } from "core/constants/ticket-status";
@@ -171,6 +172,73 @@ describe("TicketsTable", () => {
         "/api/tickets",
         expect.objectContaining({
           params: expect.objectContaining({ sortBy: "subject", sortOrder: "asc", page: 1 }),
+        }),
+      );
+    });
+  });
+
+  it("sends the status, category, and search filters as query params", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { tickets: [baseTicket], total: 1, page: 1, pageSize: 10 },
+    });
+
+    renderTable({
+      status: TicketStatus.open,
+      category: TicketCategory.technical_question,
+      search: "billing",
+    });
+
+    await screen.findByRole("link", { name: "Cannot log in" });
+    expect(api.get).toHaveBeenCalledWith(
+      "/api/tickets",
+      expect.objectContaining({
+        params: expect.objectContaining({
+          status: TicketStatus.open,
+          category: TicketCategory.technical_question,
+          search: "billing",
+        }),
+      }),
+    );
+  });
+
+  it("resets to page 1 when filters change", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { tickets: [baseTicket], total: 25, page: 1, pageSize: 10 },
+    });
+
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <TicketsTable filters={{}} />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await screen.findByRole("link", { name: "Cannot log in" });
+
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({ params: expect.objectContaining({ page: 2 }) }),
+      );
+    });
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <TicketsTable filters={{ status: TicketStatus.open }} />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({
+          params: expect.objectContaining({ status: TicketStatus.open, page: 1 }),
         }),
       );
     });
