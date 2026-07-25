@@ -1,4 +1,5 @@
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { TicketStatus } from "core/constants/ticket-status";
 import { TicketCategory } from "core/constants/ticket-category";
@@ -97,5 +98,81 @@ describe("TicketsTable", () => {
     renderTable();
 
     expect(await screen.findByText("Showing 1–1 of 1 tickets")).toBeInTheDocument();
+  });
+
+  it("sorts by createdAt descending on initial load", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { tickets: [baseTicket], total: 1, page: 1, pageSize: 10 },
+    });
+
+    renderTable();
+
+    await screen.findByRole("link", { name: "Cannot log in" });
+    expect(api.get).toHaveBeenCalledWith(
+      "/api/tickets",
+      expect.objectContaining({
+        params: expect.objectContaining({ sortBy: "createdAt", sortOrder: "desc" }),
+      }),
+    );
+  });
+
+  it("sorts ascending then descending when a column header is clicked twice", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { tickets: [baseTicket], total: 1, page: 1, pageSize: 10 },
+    });
+
+    const user = userEvent.setup();
+    renderTable();
+
+    await screen.findByRole("link", { name: "Cannot log in" });
+
+    await user.click(screen.getByRole("button", { name: /subject/i }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({
+          params: expect.objectContaining({ sortBy: "subject", sortOrder: "asc" }),
+        }),
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /subject/i }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({
+          params: expect.objectContaining({ sortBy: "subject", sortOrder: "desc" }),
+        }),
+      );
+    });
+  });
+
+  it("resets to page 1 when sorting changes", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { tickets: [baseTicket], total: 25, page: 1, pageSize: 10 },
+    });
+
+    const user = userEvent.setup();
+    renderTable();
+
+    await screen.findByRole("link", { name: "Cannot log in" });
+
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({ params: expect.objectContaining({ page: 2 }) }),
+      );
+    });
+
+    await user.click(screen.getByRole("button", { name: /subject/i }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({
+          params: expect.objectContaining({ sortBy: "subject", sortOrder: "asc", page: 1 }),
+        }),
+      );
+    });
   });
 });
