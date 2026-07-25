@@ -243,4 +243,93 @@ describe("TicketsTable", () => {
       );
     });
   });
+
+  it("disables First/Previous on the first page and enables Next/Last when there are more pages", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { tickets: [baseTicket], total: 25, page: 1, pageSize: 10 },
+    });
+
+    renderTable();
+
+    await screen.findByRole("link", { name: "Cannot log in" });
+
+    expect(screen.getByRole("button", { name: "First page" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next page" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Last page" })).toBeEnabled();
+  });
+
+  it("disables Next/Last on the last page and enables First/Previous", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { tickets: [baseTicket], total: 25, page: 1, pageSize: 10 },
+    });
+
+    const user = userEvent.setup();
+    renderTable();
+
+    await screen.findByRole("link", { name: "Cannot log in" });
+
+    await user.click(screen.getByRole("button", { name: "Last page" }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({ params: expect.objectContaining({ page: 3 }) }),
+      );
+    });
+
+    expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Last page" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "First page" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeEnabled();
+  });
+
+  it("moves through pages via Next/Previous/First and updates the shown range", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { tickets: [baseTicket], total: 25, page: 1, pageSize: 10 },
+    });
+
+    const user = userEvent.setup();
+    renderTable();
+
+    await screen.findByRole("link", { name: "Cannot log in" });
+    expect(screen.getByText("Showing 1–10 of 25 tickets")).toBeInTheDocument();
+    expect(screen.getByText("Page 1 of 3")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({ params: expect.objectContaining({ page: 2 }) }),
+      );
+    });
+    expect(screen.getByText("Showing 11–20 of 25 tickets")).toBeInTheDocument();
+    expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Previous page" }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({ params: expect.objectContaining({ page: 1 }) }),
+      );
+    });
+    expect(screen.getByText("Showing 1–10 of 25 tickets")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Last page" }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({ params: expect.objectContaining({ page: 3 }) }),
+      );
+    });
+    expect(screen.getByText("Showing 21–25 of 25 tickets")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "First page" }));
+    await waitFor(() => {
+      expect(api.get).toHaveBeenLastCalledWith(
+        "/api/tickets",
+        expect.objectContaining({ params: expect.objectContaining({ page: 1 }) }),
+      );
+    });
+    expect(screen.getByText("Page 1 of 3")).toBeInTheDocument();
+  });
 });
