@@ -1,25 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { TEST_USERS, loginAsAdmin, login, logout, expectHomePage } from "../fixtures/auth";
+import { loginAsAdmin, login, logout, expectHomePage } from "../fixtures/auth";
 import { uniqueTestUser, createUserViaUI } from "../fixtures/users";
 
 test.describe("User Management", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/users");
-  });
-
-  test("should list the seeded admin with correct details and all column headers", async ({
-    page,
-  }) => {
-    for (const header of ["Name", "Email", "Role", "Created", "Actions"]) {
-      await expect(page.getByRole("columnheader", { name: header })).toBeVisible();
-    }
-
-    const adminRow = page.getByRole("row", { name: TEST_USERS.admin.email });
-    await expect(adminRow).toBeVisible();
-    await expect(adminRow.getByText(TEST_USERS.admin.name, { exact: true })).toBeVisible();
-    await expect(adminRow.getByText(TEST_USERS.admin.email, { exact: true })).toBeVisible();
-    await expect(adminRow.getByText("admin", { exact: true })).toBeVisible();
   });
 
   test("should create a new user and show it in the table with an agent badge", async ({

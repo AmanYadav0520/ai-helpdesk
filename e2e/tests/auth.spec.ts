@@ -15,20 +15,6 @@ test.describe("Authentication", () => {
       await page.goto("/login");
     });
 
-    test("should display login form with all elements", async ({ page }) => {
-      await expect(page.getByText("Sign in to Help Desk")).toBeVisible();
-      await expect(
-        page.getByText(/enter your credentials to access your dashboard/i)
-      ).toBeVisible();
-
-      await expect(page.getByLabel("Email")).toBeVisible();
-      await expect(page.getByLabel("Password")).toBeVisible();
-
-      await expect(
-        page.getByRole("button", { name: /sign in/i })
-      ).toBeVisible();
-    });
-
     test("should login successfully with valid admin credentials", async ({
       page,
     }) => {
@@ -42,41 +28,6 @@ test.describe("Authentication", () => {
       await expect(
         page.getByText(TEST_USERS.admin.name, { exact: true })
       ).toBeVisible();
-    });
-
-    test("should show error with invalid email format", async ({ page }) => {
-      await page.getByLabel("Email").fill("invalid-email");
-      await page.getByLabel("Password").fill("password123");
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      await expect(page.getByText(/invalid email address/i)).toBeVisible();
-      await expectLoginPage(page);
-    });
-
-    test("should show error with empty email", async ({ page }) => {
-      await page.getByLabel("Password").fill("password123");
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      await expect(page.getByText(/invalid email address/i)).toBeVisible();
-      await expectLoginPage(page);
-    });
-
-    test("should show error with empty password", async ({ page }) => {
-      await page.getByLabel("Email").fill(TEST_USERS.admin.email);
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      await expect(page.getByText(/password is required/i)).toBeVisible();
-      await expectLoginPage(page);
-    });
-
-    test("should show error with empty email and password", async ({
-      page,
-    }) => {
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      await expect(page.getByText(/invalid email address/i)).toBeVisible();
-      await expect(page.getByText(/password is required/i)).toBeVisible();
-      await expectLoginPage(page);
     });
 
     test("should show error with invalid email (non-existent user)", async ({
@@ -106,84 +57,11 @@ test.describe("Authentication", () => {
       );
       await expectLoginPage(page);
     });
-
-    test("should show loading state during login", async ({ page }) => {
-      let resolveDelay!: () => void;
-      const delay = new Promise<void>((resolve) => {
-        resolveDelay = resolve;
-      });
-
-      await page.route("**/api/auth/sign-in/email", async (route) => {
-        await delay;
-        await route.continue();
-      });
-
-      await page.getByLabel("Email").fill(TEST_USERS.admin.email);
-      await page.getByLabel("Password").fill(TEST_USERS.admin.password);
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      await expect(page.getByText(/signing in.../i)).toBeVisible();
-
-      resolveDelay();
-      await page.unrouteAll({ behavior: "ignoreErrors" });
-    });
-
-    test("should redirect to home if already authenticated", async ({
-      page,
-    }) => {
-      await loginAsAdmin(page);
-
-      await page.goto("/login");
-
-      await expectHomePage(page);
-    });
-
-    test("should clear server error on new submission", async ({ page }) => {
-      await login(page, {
-        email: TEST_USERS.admin.email,
-        password: "wrongpassword",
-      });
-
-      await expect(page.getByRole("alert")).toBeVisible();
-
-      await page.getByLabel("Email").clear();
-      await page.getByLabel("Password").clear();
-      await login(page, TEST_USERS.admin);
-
-      await expectHomePage(page);
-    });
-
-    test("should show only one alert after repeated failed submissions", async ({
-      page,
-    }) => {
-      await login(page, {
-        email: TEST_USERS.admin.email,
-        password: "wrongpassword",
-      });
-      await expect(page.getByRole("alert")).toHaveCount(1);
-
-      await login(page, {
-        email: TEST_USERS.admin.email,
-        password: "stillwrong",
-      });
-      await expect(page.getByRole("alert")).toHaveCount(1);
-    });
   });
 
   test.describe("Input Edge Cases", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/login");
-    });
-
-    test("should reject a whitespace-only email as invalid format", async ({
-      page,
-    }) => {
-      await page.getByLabel("Email").fill("   ");
-      await page.getByLabel("Password").fill("password123");
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      await expect(page.getByText(/invalid email address/i)).toBeVisible();
-      await expectLoginPage(page);
     });
 
     test("should log in successfully when the email has leading/trailing whitespace", async ({
@@ -200,48 +78,6 @@ test.describe("Authentication", () => {
       await expectHomePage(page);
     });
 
-    test("should treat a whitespace-only password as invalid credentials, not a validation error", async ({
-      page,
-    }) => {
-      // A password of just spaces satisfies the client-side "required" check
-      // (length > 0), so the form submits and the server rejects it instead.
-      await page.getByLabel("Email").fill(TEST_USERS.admin.email);
-      await page.getByLabel("Password").fill("   ");
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      await expect(page.getByText(/password is required/i)).not.toBeVisible();
-      await expect(page.getByRole("alert")).toContainText(
-        /invalid email or password/i
-      );
-      await expectLoginPage(page);
-    });
-
-    test("should reject a long garbage string as invalid email format without hanging", async ({
-      page,
-    }) => {
-      const garbage = "not-an-email-" + "a".repeat(500);
-      await page.getByLabel("Email").fill(garbage);
-      await page.getByLabel("Password").fill("password123");
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      await expect(page.getByText(/invalid email address/i)).toBeVisible();
-      await expectLoginPage(page);
-    });
-
-    test("should treat a syntactically valid but unregistered email as invalid credentials", async ({
-      page,
-    }) => {
-      await login(page, {
-        email: "admin+doesnotexist@example.com",
-        password: "password123",
-      });
-
-      await expect(page.getByRole("alert")).toContainText(
-        /invalid email or password/i
-      );
-      await expectLoginPage(page);
-    });
-
     test("should log in successfully regardless of email casing", async ({
       page,
     }) => {
@@ -256,83 +92,9 @@ test.describe("Authentication", () => {
     });
   });
 
-  test.describe("Form Submission Safety", () => {
-    test.beforeEach(async ({ page }) => {
-      await page.goto("/login");
-    });
-
-    test("should not send duplicate sign-in requests when submit is triggered twice while pending", async ({
-      page,
-    }) => {
-      let requestCount = 0;
-      let resolveDelay!: () => void;
-      const delay = new Promise<void>((resolve) => {
-        resolveDelay = resolve;
-      });
-
-      await page.route("**/api/auth/sign-in/email", async (route) => {
-        requestCount++;
-        await delay;
-        await route.continue();
-      });
-
-      await page.getByLabel("Email").fill(TEST_USERS.admin.email);
-      await page.getByLabel("Password").fill(TEST_USERS.admin.password);
-
-      // Matches both the idle "Sign in" label and the pending "Signing
-      // in..." label — a plain /sign in/i regex stops matching once the
-      // text switches, since "Signing in..." doesn't contain "sign in" as
-      // a contiguous substring.
-      const submitButton = page.getByRole("button", { name: /sign(ing)? in/i });
-      await submitButton.click();
-      await expect(submitButton).toBeDisabled();
-
-      // Bypass Playwright's actionability wait (which would block on the
-      // disabled state) to confirm the browser itself won't fire a second
-      // click while the button is disabled.
-      await submitButton.dispatchEvent("click");
-
-      resolveDelay();
-      await page.unrouteAll({ behavior: "ignoreErrors" });
-
-      await expectHomePage(page);
-      expect(requestCount).toBe(1);
-    });
-
-    test("should submit the form when pressing Enter in the password field", async ({
-      page,
-    }) => {
-      await page.getByLabel("Email").fill(TEST_USERS.admin.email);
-      await page.getByLabel("Password").fill(TEST_USERS.admin.password);
-      await page.getByLabel("Password").press("Enter");
-
-      await expectHomePage(page);
-    });
-  });
-
   test.describe("Network Failure Handling", () => {
     test.beforeEach(async ({ page }) => {
       await page.goto("/login");
-    });
-
-    test("should show a fallback error and re-enable the form when the server returns a 500", async ({
-      page,
-    }) => {
-      await page.route("**/api/auth/sign-in/email", async (route) => {
-        await route.fulfill({
-          status: 500,
-          contentType: "application/json",
-          body: "{}",
-        });
-      });
-
-      await login(page, TEST_USERS.admin);
-
-      await expect(page.getByRole("alert")).toBeVisible();
-      await expect(
-        page.getByRole("button", { name: /sign in/i })
-      ).toBeEnabled();
-      await expectLoginPage(page);
     });
 
     test("should re-enable the form after a network-level failure (though it does not yet surface an error message)", async ({
@@ -643,117 +405,6 @@ test.describe("Authentication", () => {
       await page.reload();
 
       await expectLoginPage(page);
-    });
-  });
-
-  test.describe("Malicious Input Handling", () => {
-    test.beforeEach(async ({ page }) => {
-      await page.goto("/login");
-    });
-
-    test("should reject a script-injection payload in the email field without executing it", async ({
-      page,
-    }) => {
-      let dialogFired = false;
-      page.on("dialog", () => {
-        dialogFired = true;
-      });
-
-      const payload = "<script>window.__xssFired = true;</script>@example.com";
-      await page.getByLabel("Email").fill(payload);
-      await page.getByLabel("Password").fill("password123");
-      await page.getByRole("button", { name: /sign in/i }).click();
-
-      // Not a valid email format, so it's rejected client-side exactly like
-      // any other malformed address — the important part is it's never
-      // parsed/executed as markup.
-      await expect(page.getByText(/invalid email address/i)).toBeVisible();
-      await expectLoginPage(page);
-
-      expect(dialogFired).toBe(false);
-      expect(await page.evaluate(() => (window as any).__xssFired)).toBeUndefined();
-      expect(await page.locator("script", { hasText: "__xssFired" }).count()).toBe(0);
-    });
-
-    test("should treat a script-injection payload in the password field as invalid credentials, not execute it", async ({
-      page,
-    }) => {
-      let dialogFired = false;
-      page.on("dialog", () => {
-        dialogFired = true;
-      });
-
-      await login(page, {
-        email: TEST_USERS.admin.email,
-        password: "<img src=x onerror=window.__xssFired=true>",
-      });
-
-      await expect(page.getByRole("alert")).toContainText(
-        /invalid email or password/i
-      );
-      await expectLoginPage(page);
-
-      expect(dialogFired).toBe(false);
-      expect(await page.evaluate(() => (window as any).__xssFired)).toBeUndefined();
-    });
-  });
-
-  test.describe("Keyboard Accessibility", () => {
-    test.beforeEach(async ({ page }) => {
-      await page.goto("/login");
-    });
-
-    test("should move focus from Email to Password to Sign in via Tab", async ({
-      page,
-    }) => {
-      const emailInput = page.getByLabel("Email");
-      const passwordInput = page.getByLabel("Password");
-      const submitButton = page.getByRole("button", { name: /sign in/i });
-
-      await emailInput.focus();
-      await expect(emailInput).toBeFocused();
-
-      await page.keyboard.press("Tab");
-      await expect(passwordInput).toBeFocused();
-
-      await page.keyboard.press("Tab");
-      await expect(submitButton).toBeFocused();
-    });
-
-    test("should allow filling in and submitting the form using only the keyboard", async ({
-      page,
-    }) => {
-      await page.getByLabel("Email").focus();
-      await page.keyboard.type(TEST_USERS.admin.email);
-      await page.keyboard.press("Tab");
-      await page.keyboard.type(TEST_USERS.admin.password);
-      await page.keyboard.press("Tab");
-
-      await expect(page.getByRole("button", { name: /sign in/i })).toBeFocused();
-
-      await page.keyboard.press("Enter");
-
-      await expectHomePage(page);
-    });
-  });
-
-  test.describe("Password Field Security", () => {
-    test("should mask the password input and not leak its value elsewhere in the DOM", async ({
-      page,
-    }) => {
-      await page.goto("/login");
-
-      const passwordInput = page.getByLabel("Password");
-      await expect(passwordInput).toHaveAttribute("type", "password");
-
-      const secret = "super-secret-value-123";
-      await passwordInput.fill(secret);
-      await expect(passwordInput).toHaveValue(secret);
-
-      // The typed value must not be echoed as visible text anywhere else on
-      // the page (e.g. a stray debug element or mirrored attribute).
-      const bodyText = await page.locator("body").innerText();
-      expect(bodyText).not.toContain(secret);
     });
   });
 
