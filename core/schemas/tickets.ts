@@ -3,7 +3,7 @@ import { TicketStatus } from "../constants/ticket-status";
 import { TicketCategory } from "../constants/ticket-category";
 
 export const inboundEmailSchema = z.object({
-  from: z.email("Invalid email address"),
+  from: z.email("Invalid email address").max(255, "Sender address is too long"),
   fromName: z.string().trim().min(1, "Sender name is required").max(255, "Sender name is too long"),
   subject: z.string().trim().min(1, "Subject is required").max(255, "Subject is too long"),
   body: z.string().min(1, "Body is required").max(1000, "Body is too long"),
