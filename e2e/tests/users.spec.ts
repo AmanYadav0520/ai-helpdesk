@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin, login, logout, expectHomePage } from "../fixtures/auth";
 import { uniqueTestUser, createUserViaUI } from "../fixtures/users";
+import { API_URL, testDb } from "../fixtures/db";
+import { postInboundEmail, uniqueSubject, uniqueSenderEmail } from "../fixtures/tickets";
 
 test.describe("User Management", () => {
   test.beforeEach(async ({ page }) => {
@@ -101,5 +103,44 @@ test.describe("User Management", () => {
 
     await expect(alertDialog).not.toBeVisible();
     await expect(page.getByRole("row", { name: user.email })).toHaveCount(0);
+  });
+
+  /**
+   * Ticket.assignedTo has onDelete: SetNull in schema.prisma, but that's a
+   * real foreign-key action that only fires on an actual row delete —
+   * DELETE /api/users/:id soft-deletes (sets deletedAt), which never
+   * triggers it. This is real DB-cascading logic a mocked component test
+   * can't reach, so it belongs here per CLAUDE.md's testing strategy.
+   */
+  test("should unassign a user's tickets when the user is deleted", async ({
+    page,
+    request,
+  }) => {
+    const ticketRes = await postInboundEmail(request, {
+      from: `Jane Doe <${uniqueSenderEmail()}>`,
+      subject: uniqueSubject(),
+      text: "I need help with my account.",
+    });
+    expect(ticketRes.status()).toBe(201);
+    const { ticket } = await ticketRes.json();
+
+    const user = uniqueTestUser();
+    await createUserViaUI(page, user);
+    const agent = await testDb.user.findUniqueOrThrow({ where: { email: user.email } });
+
+    const assignRes = await page.request.patch(`${API_URL}/api/tickets/${ticket.id}`, {
+      data: { assignedToId: agent.id },
+    });
+    expect(assignRes.status()).toBe(200);
+
+    await page
+      .getByRole("row", { name: user.email })
+      .getByRole("button", { name: `Delete ${user.name}` })
+      .click();
+    await page.getByRole("button", { name: "Confirm" }).click();
+    await expect(page.getByRole("row", { name: user.email })).toHaveCount(0);
+
+    const updatedTicket = await testDb.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
+    expect(updatedTicket.assignedToId).toBeNull();
   });
 });
