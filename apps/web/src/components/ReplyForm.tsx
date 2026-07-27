@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { createReplySchema, type CreateReplyInput } from "core/schemas/replies";
 import { type Ticket } from "core/constants/ticket";
 import { Sparkles } from "lucide-react";
@@ -28,12 +28,15 @@ export default function ReplyForm({ ticket }: { ticket: Ticket }) {
     defaultValues: { ticketId: ticket.id, body: "" },
   });
 
+  const body = useWatch({ control, name: "body" });
+
   const { mutateAsync } = useMutation({
     mutationFn: (data: CreateReplyInput) => api.post("/api/replies", data),
   });
 
   const { mutateAsync: polishAsync, isPending: isPolishing } = useMutation({
-    mutationFn: (body: string) => api.post<{ body: string }>("/api/replies/polish", { body }),
+    mutationFn: (body: string) =>
+      api.post<{ body: string }>("/api/replies/polish", { ticketId: ticket.id, body }),
   });
 
   const onSubmit = async (data: CreateReplyInput) => {
@@ -105,7 +108,7 @@ export default function ReplyForm({ ticket }: { ticket: Ticket }) {
             <Sparkles />
             {isPolishing ? "Polishing..." : "Polish"}
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={!body?.trim() || isSubmitting}>
             {isSubmitting ? "Sending..." : "Send Reply"}
           </Button>
         </div>

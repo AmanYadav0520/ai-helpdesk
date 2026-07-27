@@ -28,12 +28,20 @@ router.post("/polish", requireAuth, async (req, res) => {
   const data = validate(polishReplySchema, req.body, res);
   if (!data) return;
 
+  const ticket = await prisma.ticket.findUnique({ where: { id: data.ticketId } });
+  if (!ticket) {
+    res.status(404).json({ error: "Ticket not found" });
+    return;
+  }
+
+  const customerFirstName = ticket.senderName.trim().split(/\s+/)[0];
+
   const { text } = await generateText({
     model: openai("gpt-5.2"),
-    prompt: `Rewrite the following help desk agent reply to be clearer, more professional, and polished, while preserving its meaning and intent. Reply with only the rewritten text — no preamble, no quotes.\n\n${data.body}`,
+    prompt: `Rewrite the following help desk agent reply to be clearer, more professional, and polished, while preserving its meaning and intent. Address the customer by their first name ("${customerFirstName}") near the start of the reply. Reply with only the rewritten text — no preamble, no quotes, no signature or sign-off.\n\n${data.body}`,
   });
 
-  res.json({ body: text.trim() });
+  res.json({ body: `${text.trim()}\n\n— ${req.user!.name}` });
 });
 
 router.post("/", requireAuth, async (req, res) => {

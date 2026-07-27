@@ -30,14 +30,18 @@ describe("ReplyForm", () => {
     vi.mocked(api.post).mockReset();
   });
 
-  it("shows a validation error and does not submit when the body is empty", async () => {
+  it("disables the Send Reply button when the body is empty", async () => {
     const user = userEvent.setup();
     renderWithQuery(<ReplyForm ticket={ticket} />);
 
-    await user.click(screen.getByRole("button", { name: "Send Reply" }));
+    const sendButton = screen.getByRole("button", { name: "Send Reply" });
+    expect(sendButton).toBeDisabled();
 
-    expect(await screen.findByText("Reply body is required")).toBeInTheDocument();
-    expect(api.post).not.toHaveBeenCalled();
+    await user.type(screen.getByRole("textbox"), "Thanks for reaching out.");
+    expect(sendButton).toBeEnabled();
+
+    await user.clear(screen.getByRole("textbox"));
+    expect(sendButton).toBeDisabled();
   });
 
   it("posts the reply and clears the textbox on success", async () => {
@@ -88,7 +92,10 @@ describe("ReplyForm", () => {
     await user.click(screen.getByRole("button", { name: "Polish" }));
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith("/api/replies/polish", { body: "thx for msg" });
+      expect(api.post).toHaveBeenCalledWith("/api/replies/polish", {
+        ticketId: 1,
+        body: "thx for msg",
+      });
     });
 
     await waitFor(() => {
