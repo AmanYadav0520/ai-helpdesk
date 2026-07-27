@@ -7,7 +7,9 @@
     "dev": "bun --hot src/index.ts",
     "start": "bun src/index.ts",
     "seed": "bun run prisma/seed.ts",
-    "seed:tickets": "bun run prisma/seed-tickets.ts"
+    "seed:tickets": "bun run prisma/seed-tickets.ts",
+    "seed:replies": "bun run prisma/seed-replies.ts",
+    "test": "bun test"
   },
   "devDependencies": {
     "@types/bun": "latest",

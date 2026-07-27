@@ -18,8 +18,8 @@ This project follows Code with Mosh's architecture and coding style.
 
 Early-stage scaffold for the AI-powered ticket management system described in `PROJECT.md`. See `tech-stack.md` for tech decisions (and deviations from the original plan) and `IMPLEMENTATION_PLAN.md` for phased work.
 
-- Built: database (Postgres/Prisma) and [authentication](#authentication) (Better Auth)
-- Not built yet: AI integration, email ingestion
+- Built: database (Postgres/Prisma), [authentication](#authentication) (Better Auth), inbound email ingestion (`POST /api/webhooks/inbound-email`), and two OpenAI-backed (`gpt-5-nano` via the Vercel AI SDK) features — reply polish (`POST /api/replies/polish`) and ticket summarization (`POST /api/tickets/:id/summarize`)
+- Not built yet: Claude/Anthropic-backed ticket classification and suggested replies (see `tech-stack.md`'s AI section)
 
 Check those three files for requirements — don't assume behavior from the code alone.
 

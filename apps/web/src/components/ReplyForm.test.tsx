@@ -44,6 +44,15 @@ describe("ReplyForm", () => {
     expect(sendButton).toBeDisabled();
   });
 
+  it("keeps the Send Reply button disabled for a whitespace-only body", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<ReplyForm ticket={ticket} />);
+
+    await user.type(screen.getByRole("textbox"), "   ");
+
+    expect(screen.getByRole("button", { name: "Send Reply" })).toBeDisabled();
+  });
+
   it("posts the reply and clears the textbox on success", async () => {
     vi.mocked(api.post).mockResolvedValue({ data: {} });
 

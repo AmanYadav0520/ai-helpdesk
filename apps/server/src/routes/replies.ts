@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { Router } from "express";
 import { createReplySchema, polishReplySchema } from "core/schemas/replies";
 import { prisma } from "../db";
+import { buildPolishPrompt, getCustomerFirstName, signReply } from "../lib/polish-reply";
 import { validate } from "../lib/validate";
 import { requireAuth } from "../require-auth";
 
@@ -34,14 +35,12 @@ router.post("/polish", requireAuth, async (req, res) => {
     return;
   }
 
-  const customerFirstName = ticket.senderName.trim().split(/\s+/)[0];
-
   const { text } = await generateText({
-    model: openai("gpt-5.2"),
-    prompt: `Rewrite the following help desk agent reply to be clearer, more professional, and polished, while preserving its meaning and intent. Address the customer by their first name ("${customerFirstName}") near the start of the reply. Reply with only the rewritten text — no preamble, no quotes, no signature or sign-off.\n\n${data.body}`,
+    model: openai("gpt-5-nano"),
+    prompt: buildPolishPrompt(data.body, getCustomerFirstName(ticket.senderName)),
   });
 
-  res.json({ body: `${text.trim()}\n\n— ${req.user!.name}` });
+  res.json({ body: signReply(text, req.user!.name) });
 });
 
 router.post("/", requireAuth, async (req, res) => {

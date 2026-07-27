@@ -1,7 +1,10 @@
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "ai";
 import { Router } from "express";
 import { Role } from "core/constants/role";
 import { ticketListQuerySchema, updateTicketSchema } from "core/schemas/tickets";
 import { prisma } from "../db";
+import { buildSummarizePrompt } from "../lib/summarize-ticket";
 import { validate } from "../lib/validate";
 import { requireAuth } from "../require-auth";
 
@@ -57,6 +60,32 @@ router.get("/:id", requireAuth, async (req, res) => {
   }
 
   res.json(ticket);
+});
+
+router.post("/:id/summarize", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(404).json({ error: "Ticket not found" });
+    return;
+  }
+
+  const ticket = await prisma.ticket.findUnique({ where: { id } });
+  if (!ticket) {
+    res.status(404).json({ error: "Ticket not found" });
+    return;
+  }
+
+  const replies = await prisma.reply.findMany({
+    where: { ticketId: id },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const { text } = await generateText({
+    model: openai("gpt-5-nano"),
+    prompt: buildSummarizePrompt(ticket, replies),
+  });
+
+  res.json({ summary: text });
 });
 
 router.patch("/:id", requireAuth, async (req, res) => {
