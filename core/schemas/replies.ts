@@ -6,3 +6,9 @@ export const createReplySchema = z.object({
 });
 
 export type CreateReplyInput = z.infer<typeof createReplySchema>;
+
+export const polishReplySchema = z.object({
+  body: z.string().trim().min(1, "Reply body is required"),
+});
+
+export type PolishReplyInput = z.infer<typeof polishReplySchema>;

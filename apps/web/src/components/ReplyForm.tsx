@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { createReplySchema, type CreateReplyInput } from "core/schemas/replies";
 import { type Ticket } from "core/constants/ticket";
+import { Sparkles } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
@@ -19,6 +20,8 @@ export default function ReplyForm({ ticket }: { ticket: Ticket }) {
     control,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
     formState: { isSubmitting },
   } = useForm<CreateReplyInput>({
     resolver: zodResolver(createReplySchema),
@@ -27,6 +30,10 @@ export default function ReplyForm({ ticket }: { ticket: Ticket }) {
 
   const { mutateAsync } = useMutation({
     mutationFn: (data: CreateReplyInput) => api.post("/api/replies", data),
+  });
+
+  const { mutateAsync: polishAsync, isPending: isPolishing } = useMutation({
+    mutationFn: (body: string) => api.post<{ body: string }>("/api/replies/polish", { body }),
   });
 
   const onSubmit = async (data: CreateReplyInput) => {
@@ -44,6 +51,22 @@ export default function ReplyForm({ ticket }: { ticket: Ticket }) {
 
     queryClient.invalidateQueries({ queryKey: ["replies", ticket.id] });
     reset({ ticketId: ticket.id, body: "" });
+  };
+
+  const onPolish = async () => {
+    setError(null);
+    const body = getValues("body");
+    if (!body.trim()) return;
+
+    try {
+      const { data } = await polishAsync(body);
+      setValue("body", data.body, { shouldDirty: true, shouldValidate: true });
+    } catch (err) {
+      const message = isAxiosError<{ error?: string }>(err)
+        ? (err.response?.data.error ?? "Failed to polish reply.")
+        : "Failed to polish reply.";
+      setError(message);
+    }
   };
 
   return (
@@ -72,7 +95,16 @@ export default function ReplyForm({ ticket }: { ticket: Ticket }) {
           </Alert>
         )}
 
-        <div>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onPolish}
+            disabled={isPolishing || isSubmitting}
+          >
+            <Sparkles />
+            {isPolishing ? "Polishing..." : "Polish"}
+          </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Sending..." : "Send Reply"}
           </Button>

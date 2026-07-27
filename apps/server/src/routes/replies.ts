@@ -1,5 +1,7 @@
+import { openai } from "@ai-sdk/openai";
+import { generateText } from "ai";
 import { Router } from "express";
-import { createReplySchema } from "core/schemas/replies";
+import { createReplySchema, polishReplySchema } from "core/schemas/replies";
 import { prisma } from "../db";
 import { validate } from "../lib/validate";
 import { requireAuth } from "../require-auth";
@@ -20,6 +22,18 @@ router.get("/", requireAuth, async (req, res) => {
   });
 
   res.json({ replies });
+});
+
+router.post("/polish", requireAuth, async (req, res) => {
+  const data = validate(polishReplySchema, req.body, res);
+  if (!data) return;
+
+  const { text } = await generateText({
+    model: openai("gpt-5.2"),
+    prompt: `Rewrite the following help desk agent reply to be clearer, more professional, and polished, while preserving its meaning and intent. Reply with only the rewritten text — no preamble, no quotes.\n\n${data.body}`,
+  });
+
+  res.json({ body: text.trim() });
 });
 
 router.post("/", requireAuth, async (req, res) => {

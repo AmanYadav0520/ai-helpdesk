@@ -76,4 +76,47 @@ describe("ReplyForm", () => {
 
     expect(await screen.findByText("Ticket is closed")).toBeInTheDocument();
   });
+
+  it("replaces the draft with the polished text on success", async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: { body: "Thank you for reaching out." } });
+
+    const user = userEvent.setup();
+    renderWithQuery(<ReplyForm ticket={ticket} />);
+
+    const textbox = screen.getByRole("textbox");
+    await user.type(textbox, "thx for msg");
+    await user.click(screen.getByRole("button", { name: "Polish" }));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith("/api/replies/polish", { body: "thx for msg" });
+    });
+
+    await waitFor(() => {
+      expect(textbox).toHaveValue("Thank you for reaching out.");
+    });
+  });
+
+  it("shows the server error message when polishing fails", async () => {
+    vi.mocked(api.post).mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { error: "Failed to polish reply." } },
+    });
+
+    const user = userEvent.setup();
+    renderWithQuery(<ReplyForm ticket={ticket} />);
+
+    await user.type(screen.getByRole("textbox"), "thx for msg");
+    await user.click(screen.getByRole("button", { name: "Polish" }));
+
+    expect(await screen.findByText("Failed to polish reply.")).toBeInTheDocument();
+  });
+
+  it("does not call the API when polishing an empty draft", async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<ReplyForm ticket={ticket} />);
+
+    await user.click(screen.getByRole("button", { name: "Polish" }));
+
+    expect(api.post).not.toHaveBeenCalled();
+  });
 });

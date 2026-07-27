@@ -34,6 +34,7 @@
 - Anthropic API (Claude)
 - Structured/tool-based output for ticket classification (constrained to: General, Technical Question, Refund Request)
 - Used for: classification, ticket summaries, suggested/auto-generated replies
+- **Revised (partial)**: the reply-polish feature (`POST /api/replies/polish`, "Polish" button on the ticket detail reply form) uses the [Vercel AI SDK](https://ai-sdk.dev) (`ai` + `@ai-sdk/openai`) with OpenAI's `gpt-5.2` instead of Claude — a deliberate one-off choice for this feature, not a switch away from Anthropic for classification/summaries/suggested replies above
 
 ## Email Ingestion
 - Postmark or SendGrid inbound parse — inbound webhook creates a ticket
