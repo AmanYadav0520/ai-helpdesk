@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { TicketStatus, statusLabel } from "core/constants/ticket-status";
+import { TicketStatus, statusLabel, agentTicketStatuses } from "core/constants/ticket-status";
 import { TicketCategory, categoryLabel } from "core/constants/ticket-category";
 import { Input } from "@/components/ui/input";
 import {
@@ -44,7 +44,7 @@ export function TicketsFilters({ filters, onChange }: TicketsFiltersProps) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={ALL}>All statuses</SelectItem>
-          {Object.values(TicketStatus).map((status) => (
+          {agentTicketStatuses.map((status) => (
             <SelectItem key={status} value={status}>
               {statusLabel[status]}
             </SelectItem>

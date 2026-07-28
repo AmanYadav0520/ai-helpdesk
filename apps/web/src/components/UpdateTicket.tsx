@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Ticket } from "core/constants/ticket";
-import { TicketStatus, statusLabel } from "core/constants/ticket-status";
+import { statusLabel, agentTicketStatuses } from "core/constants/ticket-status";
 import { TicketCategory, categoryLabel } from "core/constants/ticket-category";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -51,7 +51,7 @@ export default function UpdateTicket({ ticket }: { ticket: Ticket }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.values(TicketStatus).map((s) => (
+              {agentTicketStatuses.map((s) => (
                 <SelectItem key={s} value={s}>
                   {statusLabel[s]}
                 </SelectItem>

@@ -40,7 +40,7 @@ router.post("/polish", requireAuth, async (req, res) => {
     prompt: buildPolishPrompt(data.body, getCustomerFirstName(ticket.senderName)),
   });
 
-  res.json({ body: signReply(text, req.user!.name) });
+  res.json({ body: signReply(text) });
 });
 
 router.post("/", requireAuth, async (req, res) => {

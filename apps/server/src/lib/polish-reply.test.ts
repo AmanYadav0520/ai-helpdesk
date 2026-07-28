@@ -31,13 +31,13 @@ describe("buildPolishPrompt", () => {
 });
 
 describe("signReply", () => {
-  it("appends the agent's name on a new line", () => {
-    expect(signReply("Thank you for reaching out.", "Grace Hopper")).toBe(
-      "Thank you for reaching out.\n\n— Grace Hopper",
+  it("appends the Helpdesk Support sign-off on a new line", () => {
+    expect(signReply("Thank you for reaching out.")).toBe(
+      "Thank you for reaching out.\n\n— Helpdesk Support",
     );
   });
 
   it("trims the polished text before signing", () => {
-    expect(signReply("  Thank you.  ", "Grace Hopper")).toBe("Thank you.\n\n— Grace Hopper");
+    expect(signReply("  Thank you.  ")).toBe("Thank you.\n\n— Helpdesk Support");
   });
 });

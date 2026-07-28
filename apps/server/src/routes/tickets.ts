@@ -2,6 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { Router } from "express";
 import { Role } from "core/constants/role";
+import { agentTicketStatuses } from "core/constants/ticket-status";
 import { ticketListQuerySchema, updateTicketSchema } from "core/schemas/tickets";
 import { prisma } from "../db";
 import { buildSummarizePrompt } from "../lib/summarize-ticket";
@@ -17,7 +18,7 @@ router.get("/", requireAuth, async (req, res) => {
   const { sortBy, sortOrder, status, category, search, page, pageSize } = query;
 
   const where = {
-    ...(status && { status }),
+    status: status ?? { in: agentTicketStatuses },
     ...(category && { category }),
     ...(search && {
       OR: [

@@ -6,7 +6,8 @@ import { TicketStatus } from "core/constants/ticket-status";
 import { requireWebhookSecret } from "../require-webhook-secret";
 import { validate } from "../lib/validate";
 import { parseFromField, stripSubjectPrefixes } from "../lib/parse-inbound-email";
-import { sendClassifyJob } from "../lib/queue";
+import { sendClassifyJob } from "../lib/classify-ticket";
+import { sendAutoResolveJob } from "../lib/auto-resolve-ticket";
 import { prisma } from "../db";
 
 const upload = multer();
@@ -73,6 +74,10 @@ router.post("/inbound-email", requireWebhookSecret, upload.any(), async (req, re
 
   sendClassifyJob(ticket).catch((error) =>
     console.error(`Failed to enqueue classify job for ticket ${ticket.id}:`, error),
+  );
+
+  sendAutoResolveJob(ticket).catch((error) =>
+    console.error(`Failed to enqueue auto-resolve job for ticket ${ticket.id}:`, error),
   );
 });
 

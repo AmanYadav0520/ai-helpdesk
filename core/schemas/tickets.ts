@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TicketStatus } from "../constants/ticket-status";
+import { agentTicketStatuses } from "../constants/ticket-status";
 import { TicketCategory } from "../constants/ticket-category";
 
 export const inboundEmailSchema = z.object({
@@ -24,7 +24,7 @@ export type TicketSortField = (typeof sortableColumns)[number];
 
 export const updateTicketSchema = z.object({
   assignedToId: z.string().nullable().optional(),
-  status: z.enum(TicketStatus).optional(),
+  status: z.enum(agentTicketStatuses).optional(),
   category: z.enum(TicketCategory).nullable().optional(),
 });
 
@@ -33,7 +33,7 @@ export type UpdateTicketInput = z.infer<typeof updateTicketSchema>;
 export const ticketListQuerySchema = z.object({
   sortBy: z.enum(sortableColumns).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
-  status: z.enum(TicketStatus).optional(),
+  status: z.enum(agentTicketStatuses).optional(),
   category: z.enum(TicketCategory).optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
