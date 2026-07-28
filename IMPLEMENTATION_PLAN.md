@@ -50,8 +50,9 @@ Assumptions made where PROJECT.md still has open questions (flagged inline with 
 
 ## Phase 5 — AI Classification & Summarization
 
-- [ ] Integrate Anthropic API client
-- [ ] Classification call: structured output constrained to the three category values, run on ticket creation
+- [x] ~~Integrate Anthropic API client~~ Integrate OpenAI API client (matches the course reference repo's actual implementation, not the originally-planned Anthropic client — see `tech-stack.md`'s AI section)
+- [x] Classification call: plain-text category output, validated against the three category values, run on ticket creation (non-blocking, via `@ai-sdk/openai`/`gpt-5-nano`, matching the course's `server/src/lib/classify-ticket.ts`)
+- [x] Background job queue: classification runs on `pg-boss` (Postgres-backed), enqueued via `sendClassifyJob` from the webhook and processed by a worker in `apps/server/src/lib/queue.ts` — matches the course's follow-up lesson (`server/src/lib/queue.ts`, commit `4d65778`, "Process background jobs with pg-boss")
 - [ ] Store category + **[ASSUMPTION]** a confidence score on the ticket
 - [ ] Summary generation: short summary shown in ticket list/detail
 - [ ] **[ASSUMPTION]** Low-confidence fallback: default to "General" category and flag the ticket for manual review rather than guessing silently

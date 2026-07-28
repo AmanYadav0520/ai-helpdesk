@@ -18,8 +18,8 @@ This project follows Code with Mosh's architecture and coding style.
 
 Early-stage scaffold for the AI-powered ticket management system described in `PROJECT.md`. See `tech-stack.md` for tech decisions (and deviations from the original plan) and `IMPLEMENTATION_PLAN.md` for phased work.
 
-- Built: database (Postgres/Prisma), [authentication](#authentication) (Better Auth), inbound email ingestion (`POST /api/webhooks/inbound-email`), and two OpenAI-backed (`gpt-5-nano` via the Vercel AI SDK) features — reply polish (`POST /api/replies/polish`) and ticket summarization (`POST /api/tickets/:id/summarize`)
-- Not built yet: Claude/Anthropic-backed ticket classification and suggested replies (see `tech-stack.md`'s AI section)
+- Built: database (Postgres/Prisma), [authentication](#authentication) (Better Auth), inbound email ingestion (`POST /api/webhooks/inbound-email`), and three OpenAI-backed (`gpt-5-nano` via the Vercel AI SDK) features — reply polish (`POST /api/replies/polish`), ticket summarization (`POST /api/tickets/:id/summarize`), and ticket classification (plain-text category classification, run on a `pg-boss` background job queue enqueued non-blocking on ticket creation in the inbound-email webhook via `apps/server/src/lib/queue.ts`)
+- Not built yet: confidence score + low-confidence fallback for classification (still `[ASSUMPTION]`s in `IMPLEMENTATION_PLAN.md`), and Claude/Anthropic-backed suggested replies (see `tech-stack.md`'s AI section)
 
 Check those three files for requirements — don't assume behavior from the code alone.
 
@@ -43,6 +43,7 @@ Bun workspace monorepo with two independently deployable apps plus a shared `cor
 - **`apps/server`** — Express v5 run directly by Bun, port 3001. CORS restricted to `WEB_ORIGIN` (default `http://localhost:3000`).
 - Express 5 automatically forwards rejected promises from `async` route handlers to the error-handling middleware — don't wrap route bodies in `try`/`catch` just to catch-and-rethrow (see `POST /api/users` in `apps/server/src/routes/users.ts`). Only reach for `try`/`catch` in a handler when you need to do something with the error yourself (map it to a specific response, log it, etc.) — e.g. `GET /api/health` catches to return a deliberate `503` body instead of the default error response.
 - Route modules live under `apps/server/src/routes/` (e.g. `routes/users.ts`), each exporting a default `Router()` mounted in `index.ts` via `app.use("/api/<name>", router)` — `requireAuth`/`requireAdmin` stay in their existing flat locations, not moved into a `middleware/` subfolder.
+- Background jobs run on `pg-boss` (`apps/server/src/lib/queue.ts`), reusing `DATABASE_URL` — no separate queue infra. `index.ts` wraps startup in an async `boot()` that awaits `startQueue()` before `app.listen`, and stops the queue gracefully on `SIGTERM`/`SIGINT`. Ticket classification is the only job registered so far (`sendClassifyJob`, enqueued non-blocking from `POST /api/webhooks/inbound-email` after the `201` response); the worker itself (`boss.work(...)`) lives in the same file as `startQueue`/`sendClassifyJob`, matching the course's own `queue.ts`, rather than a separate module per job.
 - **`apps/web`** — React 19 + Vite, port 3000. Tailwind via `@tailwindcss/vite`.
 - The apps talk over plain cross-origin HTTP — no shared routes, no proxy.
 - Client env vars need a `VITE_*` prefix (e.g. `VITE_API_URL`) to be exposed via `import.meta.env`.

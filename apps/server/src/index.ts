@@ -8,6 +8,7 @@ import ticketsRouter from "./routes/tickets";
 import agentsRouter from "./routes/agents";
 import repliesRouter from "./routes/replies";
 import webhooksRouter from "./routes/webhooks";
+import { startQueue, stopQueue } from "./lib/queue";
 
 const app = express();
 const port = process.env.PORT ?? 3001;
@@ -43,6 +44,25 @@ app.use("/api/agents", agentsRouter);
 app.use("/api/replies", repliesRouter);
 app.use("/api/webhooks", webhooksRouter);
 
-app.listen(port, () => {
-  console.log(`🚀 API server running at http://localhost:${port}`);
+async function boot() {
+  await startQueue();
+
+  const server = app.listen(port, () => {
+    console.log(`🚀 API server running at http://localhost:${port}`);
+  });
+
+  const shutdown = async () => {
+    console.log("Shutting down...");
+    server.close();
+    await stopQueue();
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+}
+
+boot().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
 });
