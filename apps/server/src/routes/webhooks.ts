@@ -8,6 +8,7 @@ import { validate } from "../lib/validate";
 import { parseFromField, stripSubjectPrefixes } from "../lib/parse-inbound-email";
 import { sendClassifyJob } from "../lib/classify-ticket";
 import { sendAutoResolveJob } from "../lib/auto-resolve-ticket";
+import { AI_AGENT_EMAIL } from "../lib/ai-agent";
 import { prisma } from "../db";
 
 const upload = multer();
@@ -59,6 +60,8 @@ router.post("/inbound-email", requireWebhookSecret, upload.any(), async (req, re
     return;
   }
 
+  const aiAgent = await prisma.user.findUnique({ where: { email: AI_AGENT_EMAIL } });
+
   const ticket = await prisma.ticket.create({
     data: {
       subject: normalizedSubject,
@@ -66,7 +69,7 @@ router.post("/inbound-email", requireWebhookSecret, upload.any(), async (req, re
       bodyHtml: data.bodyHtml ?? null,
       senderName: data.fromName,
       senderEmail: data.from,
-      assignedToId: null,
+      assignedToId: aiAgent?.id ?? null,
     },
   });
 

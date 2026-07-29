@@ -1,6 +1,7 @@
 import { TicketStatus } from "core/constants/ticket-status";
 import { TicketCategory } from "core/constants/ticket-category";
 import { Role } from "core/constants/role";
+import { AI_AGENT_EMAIL } from "../src/lib/ai-agent";
 import { prisma } from "../src/db";
 
 interface IssueTemplate {
@@ -272,7 +273,7 @@ function pickStatus(ageDays: number): TicketStatus {
 
 async function main() {
   const agents = await prisma.user.findMany({
-    where: { role: Role.agent, deletedAt: null },
+    where: { role: Role.agent, deletedAt: null, email: { not: AI_AGENT_EMAIL } },
     select: { id: true },
   });
 

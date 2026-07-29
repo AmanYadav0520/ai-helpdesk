@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { hashPassword } from "better-auth/crypto";
 import { Role } from "../src/generated/prisma/enums";
+import { AI_AGENT_EMAIL } from "../src/lib/ai-agent";
 import { prisma } from "../src/db";
 
 async function main() {
@@ -47,7 +48,32 @@ async function main() {
   console.log(`Created admin user ${email}`);
 }
 
+async function seedAiAgent() {
+  const existing = await prisma.user.findUnique({ where: { email: AI_AGENT_EMAIL } });
+  if (existing) {
+    console.log(`Ai agent already exists (${AI_AGENT_EMAIL}), skipping.`);
+    return;
+  }
+
+  const now = new Date();
+
+  await prisma.user.create({
+    data: {
+      id: randomUUID(),
+      name: "Ai",
+      email: AI_AGENT_EMAIL,
+      emailVerified: true,
+      role: Role.agent,
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+
+  console.log(`Created Ai agent (${AI_AGENT_EMAIL})`);
+}
+
 main()
+  .then(seedAiAgent)
   .catch((err) => {
     console.error(err);
     process.exitCode = 1;

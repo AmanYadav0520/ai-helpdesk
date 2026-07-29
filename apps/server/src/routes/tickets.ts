@@ -11,6 +11,20 @@ import { requireAuth } from "../require-auth";
 
 const router = Router();
 
+interface TicketStats {
+  total: number;
+  open: number;
+  aiResolved: number;
+  aiResolvedPercent: number;
+  avgResolutionMs: number | null;
+  dailyVolume: { date: string; count: number }[];
+}
+
+router.get("/stats", requireAuth, async (req, res) => {
+  const [row] = await prisma.$queryRaw<{ stats: TicketStats }[]>`SELECT get_ticket_stats() AS stats`;
+  res.json(row!.stats);
+});
+
 router.get("/", requireAuth, async (req, res) => {
   const query = validate(ticketListQuerySchema, req.query, res);
   if (!query) return;

@@ -62,7 +62,7 @@ export async function registerAutoResolveWorker(boss: PgBoss): Promise<void> {
       console.error(`Auto-resolve AI call failed for ticket ${ticketId}:`, error);
       await prisma.ticket.update({
         where: { id: ticketId },
-        data: { status: TicketStatus.open },
+        data: { status: TicketStatus.open, assignedToId: null },
       });
       return;
     }
@@ -70,7 +70,7 @@ export async function registerAutoResolveWorker(boss: PgBoss): Promise<void> {
     if (response === "ESCALATE") {
       await prisma.ticket.update({
         where: { id: ticketId },
-        data: { status: TicketStatus.open },
+        data: { status: TicketStatus.open, assignedToId: null },
       });
     } else {
       await prisma.$transaction([
