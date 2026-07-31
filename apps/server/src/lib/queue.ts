@@ -1,4 +1,5 @@
 import { PgBoss } from "pg-boss";
+import Sentry from "./sentry";
 import { registerClassifyWorker } from "./classify-ticket";
 import { registerAutoResolveWorker } from "./auto-resolve-ticket";
 import { registerSendEmailWorker } from "./send-email";
@@ -7,7 +8,10 @@ const boss = new PgBoss({
   connectionString: process.env.DATABASE_URL!,
 });
 
-boss.on("error", console.error);
+boss.on("error", (error) => {
+  Sentry.captureException(error);
+  console.error(error);
+});
 
 export { boss };
 

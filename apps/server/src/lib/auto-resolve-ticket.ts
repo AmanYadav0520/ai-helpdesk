@@ -5,6 +5,7 @@ import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { TicketStatus } from "core/constants/ticket-status";
 import { SenderType } from "core/constants/sender-type";
+import Sentry from "./sentry";
 import { prisma } from "../db";
 import { sendEmailJob } from "./send-email";
 
@@ -61,6 +62,7 @@ export async function registerAutoResolveWorker(boss: PgBoss): Promise<void> {
       });
       response = text.trim();
     } catch (error) {
+      Sentry.captureException(error, { tags: { queue: QUEUE_NAME, ticketId } });
       console.error(`Auto-resolve AI call failed for ticket ${ticketId}:`, error);
       await prisma.ticket.update({
         where: { id: ticketId },
@@ -75,26 +77,31 @@ export async function registerAutoResolveWorker(boss: PgBoss): Promise<void> {
         data: { status: TicketStatus.open, assignedToId: null },
       });
     } else {
-      await prisma.$transaction([
-        prisma.reply.create({
-          data: {
-            body: response,
-            senderType: SenderType.agent,
-            ticketId,
-            userId: null,
-          },
-        }),
-        prisma.ticket.update({
-          where: { id: ticketId },
-          data: { status: TicketStatus.resolved },
-        }),
-      ]);
+      try {
+        await prisma.$transaction([
+          prisma.reply.create({
+            data: {
+              body: response,
+              senderType: SenderType.agent,
+              ticketId,
+              userId: null,
+            },
+          }),
+          prisma.ticket.update({
+            where: { id: ticketId },
+            data: { status: TicketStatus.resolved },
+          }),
+        ]);
 
-      await sendEmailJob({
-        to: senderEmail,
-        subject: `Re: ${subject}`,
-        body: response,
-      });
+        await sendEmailJob({
+          to: senderEmail,
+          subject: `Re: ${subject}`,
+          body: response,
+        });
+      } catch (error) {
+        Sentry.captureException(error, { tags: { queue: QUEUE_NAME, ticketId } });
+        throw error;
+      }
     }
   });
 }

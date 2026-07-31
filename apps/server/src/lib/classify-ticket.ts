@@ -2,6 +2,7 @@ import type { PgBoss } from "pg-boss";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { TicketCategory } from "core/constants/ticket-category";
+import Sentry from "./sentry";
 import { prisma } from "../db";
 
 const QUEUE_NAME = "classify-ticket";
@@ -24,27 +25,32 @@ export async function registerClassifyWorker(boss: PgBoss): Promise<void> {
   await boss.work<ClassifyJobData>(QUEUE_NAME, async (jobs) => {
     const { ticketId, subject, body } = jobs[0]!.data;
 
-    const { text } = await generateText({
-      model: openai("gpt-5-nano"),
-      system:
-        "You are a support ticket classifier. " +
-        "Classify the ticket into exactly one of these categories: " +
-        `${ticketCategories.join(", ")}. ` +
-        "Return only the category value with no extra text.",
-      prompt: `Subject: ${subject}\n\nBody: ${body}`,
-    });
+    try {
+      const { text } = await generateText({
+        model: openai("gpt-5-nano"),
+        system:
+          "You are a support ticket classifier. " +
+          "Classify the ticket into exactly one of these categories: " +
+          `${ticketCategories.join(", ")}. ` +
+          "Return only the category value with no extra text.",
+        prompt: `Subject: ${subject}\n\nBody: ${body}`,
+      });
 
-    const category = text.trim() as TicketCategory;
+      const category = text.trim() as TicketCategory;
 
-    if (!ticketCategories.includes(category)) {
-      console.warn(`Invalid category "${text.trim()}" returned for ticket ${ticketId}`);
-      return;
+      if (!ticketCategories.includes(category)) {
+        console.warn(`Invalid category "${text.trim()}" returned for ticket ${ticketId}`);
+        return;
+      }
+
+      await prisma.ticket.update({
+        where: { id: ticketId },
+        data: { category },
+      });
+    } catch (error) {
+      Sentry.captureException(error, { tags: { queue: QUEUE_NAME, ticketId } });
+      throw error;
     }
-
-    await prisma.ticket.update({
-      where: { id: ticketId },
-      data: { category },
-    });
   });
 }
 

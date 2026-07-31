@@ -5,6 +5,7 @@
  * It is included in `src/index.html`.
  */
 
+import Sentry from "./lib/sentry";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,9 +16,17 @@ const queryClient = new QueryClient();
 const elem = document.getElementById("root")!;
 const app = (
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <Sentry.ErrorBoundary
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <p className="text-muted-foreground">Something went wrong. Please refresh the page.</p>
+        </div>
+      }
+    >
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </Sentry.ErrorBoundary>
   </StrictMode>
 );
 

@@ -1,3 +1,4 @@
+import Sentry from "./lib/sentry";
 import cors from "cors";
 import express from "express";
 import { toNodeHandler } from "better-auth/node";
@@ -44,6 +45,8 @@ app.use("/api/agents", agentsRouter);
 app.use("/api/replies", repliesRouter);
 app.use("/api/webhooks", webhooksRouter);
 
+Sentry.setupExpressErrorHandler(app);
+
 async function boot() {
   await startQueue();
 
@@ -63,6 +66,7 @@ async function boot() {
 }
 
 boot().catch((error) => {
+  Sentry.captureException(error);
   console.error("Failed to start server:", error);
   process.exit(1);
 });

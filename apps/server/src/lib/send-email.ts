@@ -1,5 +1,6 @@
 import sgMail from "@sendgrid/mail";
 import type { PgBoss } from "pg-boss";
+import Sentry from "./sentry";
 
 const QUEUE_NAME = "send-email";
 
@@ -20,17 +21,22 @@ export async function registerSendEmailWorker(boss: PgBoss): Promise<void> {
   await boss.work<SendEmailJobData>(QUEUE_NAME, async (jobs) => {
     const { to, subject, body, bodyHtml } = jobs[0]!.data;
 
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+    try {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
-    await sgMail.send({
-      to,
-      from: process.env.SENDGRID_FROM_EMAIL!,
-      subject,
-      text: body,
-      ...(bodyHtml && { html: bodyHtml }),
-    });
+      await sgMail.send({
+        to,
+        from: process.env.SENDGRID_FROM_EMAIL!,
+        subject,
+        text: body,
+        ...(bodyHtml && { html: bodyHtml }),
+      });
 
-    console.log(`Email sent to ${to} — subject: "${subject}"`);
+      console.log(`Email sent to ${to} — subject: "${subject}"`);
+    } catch (error) {
+      Sentry.captureException(error, { tags: { queue: QUEUE_NAME } });
+      throw error;
+    }
   });
 }
 
