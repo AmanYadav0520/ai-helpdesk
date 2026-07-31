@@ -4,6 +4,7 @@ import { Router } from "express";
 import { createReplySchema, polishReplySchema } from "core/schemas/replies";
 import { prisma } from "../db";
 import { buildPolishPrompt, getCustomerFirstName, signReply } from "../lib/polish-reply";
+import { sendEmailJob } from "../lib/send-email";
 import { validate } from "../lib/validate";
 import { requireAuth } from "../require-auth";
 
@@ -64,6 +65,14 @@ router.post("/", requireAuth, async (req, res) => {
   });
 
   res.status(201).json(reply);
+
+  sendEmailJob({
+    to: ticket.senderEmail,
+    subject: `Re: ${ticket.subject}`,
+    body: data.body,
+  }).catch((error) =>
+    console.error(`Failed to enqueue send-email job for ticket ${ticket.id}:`, error),
+  );
 });
 
 export default router;
