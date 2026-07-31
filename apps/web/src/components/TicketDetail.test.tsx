@@ -35,7 +35,13 @@ describe("TicketDetail", () => {
 
     expect(screen.getByRole("heading", { name: "Cannot log in" })).toBeInTheDocument();
     expect(screen.getByText("Open")).toBeInTheDocument();
-    expect(screen.getByText("Ada Lovelace <ada@example.com>")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.textContent?.replace(/\s+/g, " ").trim() ===
+          "From: Ada Lovelace (ada@example.com)",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("I forgot my password.")).toBeInTheDocument();
   });
 

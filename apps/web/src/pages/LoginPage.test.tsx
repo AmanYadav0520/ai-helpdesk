@@ -35,7 +35,7 @@ describe("LoginPage", () => {
     mockSignedOut();
     renderLogin();
 
-    expect(screen.getByText("Sign in to Help Desk")).toBeInTheDocument();
+    expect(screen.getByText("Welcome back")).toBeInTheDocument();
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe("LoginPage", () => {
 
     renderLogin();
 
-    expect(screen.queryByText("Sign in to Help Desk")).not.toBeInTheDocument();
+    expect(screen.queryByText("Welcome back")).not.toBeInTheDocument();
   });
 
   it("shows a validation error for an invalid email format", async () => {

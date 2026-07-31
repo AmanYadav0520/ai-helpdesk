@@ -3,9 +3,11 @@ import { NavBar } from "./NavBar";
 
 export function Layout() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen flex flex-col bg-background">
       <NavBar />
-      <Outlet />
+      <main className="flex-1 animate-in-page">
+        <Outlet />
+      </main>
     </div>
   );
 }

@@ -6,7 +6,9 @@ export function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Welcome back, {session?.user.name}!</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-8">
+        Welcome back, {session?.user.name}!
+      </h1>
       <DashboardStats />
     </div>
   );

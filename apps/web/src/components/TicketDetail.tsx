@@ -39,12 +39,19 @@ export default function TicketDetail({ ticket }: { ticket: Ticket }) {
         <StatusBadge status={ticket.status} />
       </div>
 
-      <div className="text-sm text-muted-foreground space-y-0.5">
+      <div className="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted-foreground">
         <div>
-          {ticket.senderName} &lt;{ticket.senderEmail}&gt;
+          <span className="font-medium text-foreground">From:</span> {ticket.senderName} (
+          {ticket.senderEmail})
         </div>
-        <div>Created {new Date(ticket.createdAt).toLocaleString()}</div>
-        <div>Updated {new Date(ticket.updatedAt).toLocaleString()}</div>
+        <div>
+          <span className="font-medium text-foreground">Created:</span>{" "}
+          {new Date(ticket.createdAt).toLocaleString()}
+        </div>
+        <div>
+          <span className="font-medium text-foreground">Updated:</span>{" "}
+          {new Date(ticket.updatedAt).toLocaleString()}
+        </div>
       </div>
 
       <Card>
@@ -52,13 +59,13 @@ export default function TicketDetail({ ticket }: { ticket: Ticket }) {
           {ticket.bodyHtml ? (
             <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(ticket.bodyHtml) }} />
           ) : (
-            <p className="whitespace-pre-line">{ticket.body}</p>
+            <p className="whitespace-pre-line leading-relaxed">{ticket.body}</p>
           )}
         </CardContent>
       </Card>
 
-      <Button variant="outline" onClick={onSummarize} disabled={isSummarizing}>
-        <Sparkles />
+      <Button variant="outline" onClick={onSummarize} disabled={isSummarizing} className="gap-2">
+        <Sparkles className="h-4 w-4 text-primary" />
         {isSummarizing ? "Summarizing..." : summary ? "Regenerate Summary" : "Summarize"}
       </Button>
 
@@ -69,9 +76,14 @@ export default function TicketDetail({ ticket }: { ticket: Ticket }) {
       )}
 
       {summary && (
-        <Card>
+        <Card className="border-chart-3/25 bg-chart-3/5">
           <CardContent>
-            <p className="whitespace-pre-line text-sm">{summary}</p>
+            <div className="flex items-start gap-2.5">
+              <div className="h-6 w-6 rounded-md bg-chart-3/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="h-3.5 w-3.5 text-chart-3" />
+              </div>
+              <p className="whitespace-pre-line text-sm leading-relaxed">{summary}</p>
+            </div>
           </CardContent>
         </Card>
       )}

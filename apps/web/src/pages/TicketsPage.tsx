@@ -16,7 +16,7 @@ export function TicketsPage() {
   return (
     <div className="max-w-7xl mx-auto p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Tickets</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Tickets</h1>
       </div>
 
       <TicketsFilters filters={filters} onChange={setFilters} />

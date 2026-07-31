@@ -47,28 +47,36 @@ export default function ReplyThread({ ticket }: { ticket: Ticket }) {
 
   return (
     <div className="space-y-3">
-      {data.map((reply) => (
-        <Card key={reply.id}>
-          <CardContent className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {reply.senderType === "agent" ? (
-                <User className="h-4 w-4" />
+      {data.map((reply) => {
+        const isAgent = reply.senderType === "agent";
+
+        return (
+          <Card key={reply.id} className={isAgent ? "border-primary/25" : ""}>
+            <CardContent className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`h-6 w-6 rounded-md flex items-center justify-center ${
+                    isAgent ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {isAgent ? <Bot className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
+                </div>
+                <span className="font-medium text-foreground text-sm">
+                  {isAgent ? (reply.user?.name ?? "Agent") : ticket.senderName}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {new Date(reply.createdAt).toLocaleString()}
+                </span>
+              </div>
+              {reply.bodyHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reply.bodyHtml) }} />
               ) : (
-                <Bot className="h-4 w-4" />
+                <p className="whitespace-pre-line text-sm leading-relaxed">{reply.body}</p>
               )}
-              <span className="font-medium text-foreground">
-                {reply.senderType === "agent" ? (reply.user?.name ?? "Agent") : ticket.senderName}
-              </span>
-              <span>{new Date(reply.createdAt).toLocaleString()}</span>
-            </div>
-            {reply.bodyHtml ? (
-              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reply.bodyHtml) }} />
-            ) : (
-              <p className="whitespace-pre-line text-sm">{reply.body}</p>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

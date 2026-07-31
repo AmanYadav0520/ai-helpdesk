@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Ticket, CircleDot, Sparkles, TrendingUp, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import ErrorAlert from "@/components/ErrorAlert";
@@ -42,14 +43,20 @@ function formatAxisDate(date: string): string {
 const tiles: {
   label: string;
   value: (stats: TicketStats) => string;
+  icon: typeof Ticket;
 }[] = [
-  { label: "Total tickets", value: (s) => s.total.toLocaleString() },
-  { label: "Open tickets", value: (s) => s.open.toLocaleString() },
-  { label: "Resolved by AI", value: (s) => s.aiResolved.toLocaleString() },
-  { label: "% resolved by AI", value: (s) => `${s.aiResolvedPercent.toFixed(1)}%` },
+  { label: "Total tickets", value: (s) => s.total.toLocaleString(), icon: Ticket },
+  { label: "Open tickets", value: (s) => s.open.toLocaleString(), icon: CircleDot },
+  { label: "Resolved by AI", value: (s) => s.aiResolved.toLocaleString(), icon: Sparkles },
+  {
+    label: "% resolved by AI",
+    value: (s) => `${s.aiResolvedPercent.toFixed(1)}%`,
+    icon: TrendingUp,
+  },
   {
     label: "Avg. resolution time",
     value: (s) => (s.avgResolutionMs === null ? "—" : formatDuration(s.avgResolutionMs)),
+    icon: Clock,
   },
 ];
 
@@ -132,16 +139,21 @@ export function DashboardStats() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {tiles.map((tile) => (
           <Card key={tile.label}>
-            <CardHeader>
-              <CardTitle className="text-sm font-normal text-muted-foreground">
-                {tile.label}
-              </CardTitle>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[13px] font-medium text-muted-foreground">
+                  {tile.label}
+                </CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                  <tile.icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoading || !data ? (
-                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-9 w-20" />
               ) : (
-                <p className="text-2xl font-semibold">{tile.value(data)}</p>
+                <p className="text-3xl font-semibold tracking-tight">{tile.value(data)}</p>
               )}
             </CardContent>
           </Card>

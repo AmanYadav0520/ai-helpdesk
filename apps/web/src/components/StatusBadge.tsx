@@ -1,6 +1,8 @@
 import { type TicketStatus, statusLabel } from "core/constants/ticket-status";
 
 const statusStyles: Record<TicketStatus, string> = {
+  new: "bg-sky-500/15 text-sky-400",
+  processing: "bg-amber-500/15 text-amber-400",
   open: "bg-pink-400/15 text-pink-400",
   resolved: "bg-muted text-muted-foreground",
   closed: "bg-muted text-muted-foreground",
