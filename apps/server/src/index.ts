@@ -1,3 +1,4 @@
+import path from "path";
 import Sentry from "./lib/sentry";
 import cors from "cors";
 import express from "express";
@@ -20,6 +21,8 @@ app.use(
     credentials: true,
   }),
 );
+
+const isProduction = process.env.NODE_ENV === "production";
 
 // Must be mounted before express.json() — Better Auth parses the raw body itself.
 app.all("/api/auth/*splat", toNodeHandler(auth));
@@ -46,6 +49,17 @@ app.use("/api/replies", repliesRouter);
 app.use("/api/webhooks", webhooksRouter);
 
 Sentry.setupExpressErrorHandler(app);
+
+// In production, serve the built React client as static files
+if (isProduction) {
+  const webDist = path.resolve(import.meta.dirname, "../../web/dist");
+  app.use(express.static(webDist));
+
+  // SPA fallback: serve index.html for any non-API route
+  app.get("/{*path}", (_req, res) => {
+    res.sendFile(path.join(webDist, "index.html"));
+  });
+}
 
 async function boot() {
   await startQueue();

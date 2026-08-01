@@ -41,10 +41,8 @@
 - Postmark or SendGrid inbound parse — inbound webhook creates a ticket
 
 ## Hosting
-- Vercel (app)
-- Neon or Supabase (managed Postgres)
+- **Revised**: originally scoped as Vercel (app) + Neon/Supabase (managed Postgres) — that pairing fit the Next.js monolith plan. Confirmed against the course's own reference implementation (`github.com/mosh-hamedani/helpdesk`, commit `a757ed7`, "Prepare the app for production" — the commit immediately following "Polish the UI"): the course deploys as a **single** Railway service from a single multi-stage `Dockerfile` at the repo root, not two separate deployables. `apps/server` serves the built `apps/web` client as static files in production (same origin, same port) — see `Dockerfile` and the production static-serving block in `apps/server/src/index.ts`. `railway.toml` points Railway at the Dockerfile and sets `/api/health` as the healthcheck path. Managed Postgres via Railway's own plugin.
 
 ## Open Questions
 - Confirm inbound email provider (Postmark vs SendGrid) based on pricing/existing accounts
 - Confirm whether KB articles are a separate authored table or generated/derived (see PROJECT.md Open Questions)
-- Production build/deploy story for `apps/server` and `apps/web` as two separate deployables (was one deployable under the Next.js plan) — affects hosting choice below
