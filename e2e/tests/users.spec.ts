@@ -3,6 +3,7 @@ import { loginAsAdmin, login, logout, expectHomePage } from "../fixtures/auth";
 import { uniqueTestUser, createUserViaUI } from "../fixtures/users";
 import { API_URL, testDb } from "../fixtures/db";
 import { postInboundEmail, uniqueSubject, uniqueSenderEmail } from "../fixtures/tickets";
+import { AI_AGENT_EMAIL } from "../../apps/server/src/lib/ai-agent";
 
 test.describe("User Management", () => {
   test.beforeEach(async ({ page }) => {
@@ -142,5 +143,39 @@ test.describe("User Management", () => {
 
     const updatedTicket = await testDb.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
     expect(updatedTicket.assignedToId).toBeNull();
+  });
+
+  /**
+   * seedAiAgent() (apps/server/prisma/seed.ts) creates the AI agent user
+   * before this whole suite runs, so it's already in the DB here — GET
+   * /api/users must filter it out (email: { not: AI_AGENT_EMAIL }) so an
+   * admin never sees it, and never has a chance to delete it, in the table.
+   */
+  test("should not show the AI agent user in the users table", async ({ page }) => {
+    const aiAgent = await testDb.user.findUniqueOrThrow({ where: { email: AI_AGENT_EMAIL } });
+
+    await expect(page.getByRole("row", { name: AI_AGENT_EMAIL })).toHaveCount(0);
+    await expect(page.getByRole("row", { name: aiAgent.name })).toHaveCount(0);
+  });
+
+  /**
+   * Defense-in-depth: even though the AI agent is hidden from GET
+   * /api/users (tested above), DELETE /api/users/:id still explicitly
+   * rejects a direct request targeting its id — real route-guard/DB
+   * behavior a mocked component test can't reach.
+   */
+  test("should reject deleting the AI agent user via a direct API request", async ({
+    page,
+  }) => {
+    const aiAgent = await testDb.user.findUniqueOrThrow({ where: { email: AI_AGENT_EMAIL } });
+
+    const deleteRes = await page.request.delete(`${API_URL}/api/users/${aiAgent.id}`);
+    expect(deleteRes.status()).toBe(403);
+    expect(await deleteRes.json()).toEqual({ error: "The AI agent cannot be deleted" });
+
+    const stillExists = await testDb.user.findUniqueOrThrow({ where: { id: aiAgent.id } });
+    expect(stillExists.deletedAt).toBeNull();
+
+    await expect(page.getByRole("row", { name: AI_AGENT_EMAIL })).toHaveCount(0);
   });
 });

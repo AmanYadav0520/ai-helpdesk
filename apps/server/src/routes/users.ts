@@ -4,6 +4,7 @@ import { hashPassword } from "better-auth/crypto";
 import { Role } from "core/constants/role";
 import { createUserSchema, updateUserSchema } from "core/schemas/users";
 import { prisma } from "../db";
+import { AI_AGENT_EMAIL } from "../lib/ai-agent";
 import { validate } from "../lib/validate";
 import { requireAdmin } from "../require-admin";
 import { requireAuth } from "../require-auth";
@@ -12,7 +13,7 @@ const router = Router();
 
 router.get("/", requireAuth, requireAdmin, async (_req, res) => {
   const users = await prisma.user.findMany({
-    where: { deletedAt: null },
+    where: { deletedAt: null, email: { not: AI_AGENT_EMAIL } },
     select: { id: true, name: true, email: true, role: true, createdAt: true },
     orderBy: { createdAt: "asc" },
   });
@@ -108,6 +109,11 @@ router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
 
   if (user.role === Role.admin) {
     res.status(403).json({ error: "Admin users cannot be deleted" });
+    return;
+  }
+
+  if (user.email === AI_AGENT_EMAIL) {
+    res.status(403).json({ error: "The AI agent cannot be deleted" });
     return;
   }
 
