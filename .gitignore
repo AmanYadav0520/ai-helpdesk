@@ -39,3 +39,5 @@ e2e/playwright-report/
 
 # VS Code workspace settings (may contain local DB credentials)
 .vscode/settings.json
+
+.vercel
